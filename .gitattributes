@@ -22,7 +22,8 @@ Content/** filter=lfs diff=lfs merge=lfs -text
 *.xcf filter=lfs diff=lfs merge=lfs -text
 
 # Anything in `/RawContent` dir.
-/RawContent/**/* filter=lfs diff=lfs merge=lfs -text# Unreal Engine file types.
+/RawContent/**/* filter=lfs diff=lfs merge=lfs -text 
+# Unreal Engine file types.
 *.uasset filter=lfs diff=lfs merge=lfs -text
 *.umap filter=lfs diff=lfs merge=lfs -text
 

@@ -1,0 +1,59 @@
+# ============================================================================
+# Unreal Engine 5 .gitignore
+# ============================================================================
+
+# --- Compiled / Intermediate ---
+Binaries/
+Intermediate/
+DerivedDataCache/
+Build/
+
+# --- Saved (logs, autosaves, crashes, local configs) ---
+Saved/
+
+# --- IDE / OS ---
+.vs/
+.vscode/
+.idea/
+*.xcworkspace
+*.xcuserdata
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Visual Studio generated ---
+*.rsuser
+*.user
+*.userosscache
+*.dbmdl
+
+# --- C++ build artifacts ---
+*.obj
+*.pch
+*.pdb
+*.lib
+*.ilk
+*.exp
+*.exe
+*.dll
+*.dylib
+*.so
+*.o
+*.a
+
+# --- Packaging output ---
+Releases/
+PackagedBuilds/
+
+# --- Starter Content (remove if you use it) ---
+# Content/StarterContent/
+
+# --- Local plugin builds ---
+Plugins/*/Binaries/
+Plugins/*/Intermediate/

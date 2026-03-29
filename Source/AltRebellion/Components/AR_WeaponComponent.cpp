@@ -23,6 +23,11 @@ void UAR_WeaponComponent::Fire(FVector TargetLocation)
 {
     if (!CanFire()) return;
 
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    float FireInterval = 1.0f / FireRate;
+    if (CurrentTime - LastFireTime < FireInterval) return;
+    LastFireTime = CurrentTime;
+
     CurrentAmmo--;
     OnAmmoChanged.Broadcast(CurrentAmmo, AmmoPerClip);
 

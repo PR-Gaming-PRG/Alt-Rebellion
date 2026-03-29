@@ -72,6 +72,8 @@ private:
     // Таймер между выстрелами
     float FireCooldown = 0.0f;
 
+    float LastFireTime = -999.0f;
+
     // Таймер для автоматической перезарядки
     FTimerHandle ReloadTimerHandle;
 

@@ -7,6 +7,7 @@
 
 class UInputMappingContext;
 class UInputAction;
+class AAR_CharacterBase;
 
 UCLASS()
 class ALTREBELLION_API AAR_PlayerController : public APlayerController
@@ -53,4 +54,21 @@ protected:
     virtual void BeginPlay() override;
 
     bool bIsPaused = false;
+
+    // Привязка действий ввода
+    virtual void SetupInputComponent() override;
+
+private:
+    // Обработчики ввода
+    void HandleMove(const FInputActionValue& Value);
+    void HandleShoot(const FInputActionValue& Value);
+    void HandleAbility1(const FInputActionValue& Value);
+    void HandleAbility2(const FInputActionValue& Value);
+    void HandleUltimate(const FInputActionValue& Value);
+    void HandleDodge(const FInputActionValue& Value);
+    void HandleInteract(const FInputActionValue& Value);
+    void HandlePause(const FInputActionValue& Value);
+
+    // Получить текущего персонажа
+    AAR_CharacterBase* GetARCharacter() const;
 };

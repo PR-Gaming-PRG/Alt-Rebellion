@@ -7,6 +7,7 @@
 class UAR_HealthComponent;
 class UAR_WeaponComponent;
 class UAR_AbilityComponent;
+class UAR_CharacterDataAsset;
 
 UCLASS()
 class ALTREBELLION_API AAR_CharacterBase : public AAltRebellionCharacter
@@ -50,6 +51,10 @@ public:
     UFUNCTION(BlueprintNativeEvent, Category = "Character")
     void OnCharacterDeath(AActor* DeadActor);
     virtual void OnCharacterDeath_Implementation(AActor* DeadActor);
+    
+    // DataAsset с параметрами персонажа
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character")
+    TObjectPtr<UAR_CharacterDataAsset> CharacterData;
 
 protected:
     virtual void BeginPlay() override;

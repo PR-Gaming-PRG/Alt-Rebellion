@@ -1,4 +1,5 @@
 #include "Characters/AR_CharacterBase.h"
+#include "Characters/AR_CharacterDataAsset.h"
 #include "Components/AR_HealthComponent.h"
 #include "Components/AR_WeaponComponent.h"
 #include "Components/AR_AbilityComponent.h"
@@ -16,8 +17,38 @@ void AAR_CharacterBase::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Устанавливаем скорость
-    GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+    // Применяем параметры из DataAsset если он назначен
+    if (CharacterData)
+    {
+        // Здоровье
+        if (HealthComponent)
+        {
+            HealthComponent->MaxHealth = CharacterData->MaxHealth;
+            HealthComponent->Armor = CharacterData->Armor;
+            HealthComponent->CurrentHealth = CharacterData->MaxHealth;
+        }
+
+        // Оружие
+        if (WeaponComponent)
+        {
+            WeaponComponent->Damage = CharacterData->WeaponDamage;
+            WeaponComponent->FireRate = CharacterData->FireRate;
+            WeaponComponent->Range = CharacterData->Range;
+            WeaponComponent->SpreadAngle = CharacterData->SpreadAngle;
+            WeaponComponent->AmmoPerClip = CharacterData->AmmoPerClip;
+            WeaponComponent->ReloadTime = CharacterData->ReloadTime;
+        }
+
+        // Движение
+        MoveSpeed = CharacterData->MoveSpeed;
+        DamageMultiplier = CharacterData->DamageMultiplier;
+        GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+    }
+    else
+    {
+        // Если DataAsset не назначен используем дефолтные значения
+        GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+    }
 
     // Подписываемся на смерть
     if (HealthComponent)

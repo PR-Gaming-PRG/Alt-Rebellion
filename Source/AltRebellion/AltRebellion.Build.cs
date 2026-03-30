@@ -17,6 +17,7 @@ public class AltRebellion : ModuleRules
 			"AIModule",
 			"NavigationSystem",
 			"StateTreeModule",
+			"GameplayTasks",
 			"GameplayStateTreeModule",
 			"Niagara",
 			"UMG",

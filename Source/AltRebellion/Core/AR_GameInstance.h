@@ -21,4 +21,8 @@ public:
     // Текущая зона (для отслеживания прогресса)
     UPROPERTY(BlueprintReadWrite, Category = "Game State")
     FName CurrentZoneID;
+
+    // Ресурсы игрока (токены и т.д.)
+    UPROPERTY(BlueprintReadWrite, Category = "Game State")
+    TMap<FName, int32> Resources;
 };

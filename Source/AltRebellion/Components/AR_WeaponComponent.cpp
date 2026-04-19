@@ -1,4 +1,5 @@
 #include "Components/AR_WeaponComponent.h"
+#include "Components/AR_HealthComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -60,7 +61,13 @@ void UAR_WeaponComponent::Fire(FVector TargetLocation)
     if (bHit && HitResult.GetActor())
     {
         UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *HitResult.GetActor()->GetName());
-        // TODO: применить урон через HealthComponent
+
+        UAR_HealthComponent* TargetHealth = 
+            HitResult.GetActor()->FindComponentByClass<UAR_HealthComponent>();
+        if (TargetHealth)
+        {
+            TargetHealth->ApplyDamage(Damage, nullptr);
+        }
     }
 
     // Автоперезарядка если патроны кончились

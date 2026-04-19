@@ -5,6 +5,7 @@
 #include "AR_EnemyBase.generated.h"
 
 class UAR_HealthComponent;
+class AAR_LootDrop;
 
 UCLASS()
 class ALTREBELLION_API AAR_EnemyBase : public ACharacter
@@ -41,6 +42,14 @@ public:
     // Атаковать цель
     UFUNCTION(BlueprintCallable, Category = "Combat")
     void PerformAttack(AActor* Target);
+
+    // Классы лута который дропает враг
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
+    TArray<TSubclassOf<AAR_LootDrop>> LootClasses;
+
+    // Шанс дропа (0.0 - 1.0)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
+    float LootDropChance = 0.7f;
 
     // Смерть врага
     UFUNCTION(BlueprintNativeEvent, Category = "Enemy")

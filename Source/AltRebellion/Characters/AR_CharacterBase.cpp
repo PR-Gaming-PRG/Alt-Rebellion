@@ -36,6 +36,7 @@ void AAR_CharacterBase::BeginPlay()
             WeaponComponent->Range = CharacterData->Range;
             WeaponComponent->SpreadAngle = CharacterData->SpreadAngle;
             WeaponComponent->AmmoPerClip = CharacterData->AmmoPerClip;
+            WeaponComponent->CurrentAmmo = CharacterData->AmmoPerClip;
             WeaponComponent->ReloadTime = CharacterData->ReloadTime;
         }
 
@@ -55,6 +56,8 @@ void AAR_CharacterBase::BeginPlay()
     {
         HealthComponent->OnDeath.AddDynamic(this, &AAR_CharacterBase::OnCharacterDeath);
     }
+
+    OnCharacterReady.Broadcast();
 }
 
 void AAR_CharacterBase::Move(FVector2D MovementVector)

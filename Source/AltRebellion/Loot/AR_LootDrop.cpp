@@ -39,6 +39,8 @@ void AAR_LootDrop::OnSphereOverlap(
     bool bFromSweep,
     const FHitResult& SweepResult)
 {
+    UE_LOG(LogTemp, Warning, TEXT("Overlap! Actor: %s"), *OtherActor->GetName());
+
     // Подбирает только игрок
     AAR_CharacterBase* Player = Cast<AAR_CharacterBase>(OtherActor);
     if (Player)
@@ -49,6 +51,16 @@ void AAR_LootDrop::OnSphereOverlap(
 
 void AAR_LootDrop::PickUp(AActor* Collector)
 {
+    FString LootTypeName;
+    switch(LootType)
+    {
+        case ELootType::HealthPack: LootTypeName = "HealthPack"; break;
+        case ELootType::AmmoBox: LootTypeName = "AmmoBox"; break;
+        case ELootType::Token: LootTypeName = "Token"; break;
+        case ELootType::AbilityBoost: LootTypeName = "AbilityBoost"; break;
+    }
+    UE_LOG(LogTemp, Warning, TEXT("PickUp called! LootType: %s"), *LootTypeName);
+
     if (bIsPickedUp) return;
     bIsPickedUp = true;
 
@@ -70,6 +82,12 @@ void AAR_LootDrop::PickUp(AActor* Collector)
                 int32 NewAmmo = Character->WeaponComponent->CurrentAmmo + Amount;
                 int32 MaxAmmo = Character->WeaponComponent->AmmoPerClip;
                 Character->WeaponComponent->CurrentAmmo = FMath::Min(NewAmmo, MaxAmmo);
+                
+                // Оповещаем HUD
+                Character->WeaponComponent->OnAmmoChanged.Broadcast(
+                    Character->WeaponComponent->CurrentAmmo,
+                    Character->WeaponComponent->AmmoPerClip
+                );
             }
             break;
 

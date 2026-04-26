@@ -1,5 +1,7 @@
 #include "Characters/AR_EnemyBase.h"
 #include "Components/AR_HealthComponent.h"
+#include "Loot/AR_LootDrop.h"
+#include "Core/AR_GameInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -45,13 +47,40 @@ void AAR_EnemyBase::PerformAttack(AActor* Target)
 
 void AAR_EnemyBase::OnEnemyDeath_Implementation(AActor* DeadActor)
 {
-    // Отключаем коллизию и движение
     SetActorEnableCollision(false);
     GetCharacterMovement()->DisableMovement();
 
-    // Позже здесь: дроп лута, анимация смерти, уничтожение актора
     UE_LOG(LogTemp, Warning, TEXT("Enemy %s died! Reward: %d tokens"), *GetName(), TokenReward);
+    UE_LOG(LogTemp, Warning, TEXT("LootClasses count: %d"), LootClasses.Num());
 
-    // Удаляем через 2 секунды
+    UAR_GameInstance* GI = Cast<UAR_GameInstance>(
+        UGameplayStatics::GetGameInstance(GetWorld())
+    );
+    if (GI)
+    {
+        int32& Tokens = GI->Resources.FindOrAdd(TEXT("Tokens"));
+        Tokens += TokenReward;
+        UE_LOG(LogTemp, Warning, TEXT("Tokens added: %d, Total: %d"), TokenReward, Tokens);
+    }
+
+    // Дроп лута
+    if (LootClasses.Num() > 0 && FMath::RandRange(0.0f, 1.0f) <= LootDropChance)
+    {
+        int32 RandomIndex = FMath::RandRange(0, LootClasses.Num() - 1);
+        if (LootClasses[RandomIndex])
+        {
+            FActorSpawnParameters SpawnParams;
+            SpawnParams.SpawnCollisionHandlingOverride =
+                ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+            GetWorld()->SpawnActor<AAR_LootDrop>(
+                LootClasses[RandomIndex],
+                GetActorLocation(),
+                FRotator::ZeroRotator,
+                SpawnParams
+            );
+        }
+    }
+
     SetLifeSpan(2.0f);
 }

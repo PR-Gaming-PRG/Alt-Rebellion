@@ -9,6 +9,8 @@ class UAR_WeaponComponent;
 class UAR_AbilityComponent;
 class UAR_CharacterDataAsset;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterReady);
+
 UCLASS()
 class ALTREBELLION_API AAR_CharacterBase : public AAltRebellionCharacter
 {
@@ -55,6 +57,9 @@ public:
     // DataAsset с параметрами персонажа
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character")
     TObjectPtr<UAR_CharacterDataAsset> CharacterData;
+
+    UPROPERTY(BlueprintAssignable, Category = "Character")
+    FOnCharacterReady OnCharacterReady;
 
 protected:
     virtual void BeginPlay() override;

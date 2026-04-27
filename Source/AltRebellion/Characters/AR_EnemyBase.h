@@ -6,6 +6,13 @@
 
 class UAR_HealthComponent;
 class AAR_LootDrop;
+class AAR_EnemyBase;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FOnAnyEnemyKilled,
+    AAR_EnemyBase*,
+    KilledEnemy
+);
 
 UCLASS()
 class ALTREBELLION_API AAR_EnemyBase : public ACharacter
@@ -15,50 +22,45 @@ class ALTREBELLION_API AAR_EnemyBase : public ACharacter
 public:
     AAR_EnemyBase();
 
-    // Компонент здоровья
+    static FOnAnyEnemyKilled OnAnyEnemyKilled;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     TObjectPtr<UAR_HealthComponent> HealthComponent;
 
-    // Урон при атаке
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-    float AttackDamage = 10.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Stats")
+    float MaxHealth = 100.0f;
 
-    // Дальность атаки
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-    float AttackRange = 150.0f;
-
-    // Кулдаун атаки
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-    float AttackCooldown = 1.5f;
-
-    // Скорость передвижения
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Stats")
     float MoveSpeed = 300.0f;
 
-    // Очки опыта/лута за убийство
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
-    int32 TokenReward = 5;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Combat")
+    float AttackDamage = 10.0f;
 
-    // Атаковать цель
-    UFUNCTION(BlueprintCallable, Category = "Combat")
-    void PerformAttack(AActor* Target);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Combat")
+    float AttackRange = 150.0f;
 
-    // Классы лута который дропает враг
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Combat")
+    float AttackCooldown = 1.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rewards")
+    int32 TokenReward = 1;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
     TArray<TSubclassOf<AAR_LootDrop>> LootClasses;
 
-    // Шанс дропа (0.0 - 1.0)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
-    float LootDropChance = 0.7f;
+    float LootDropChance = 0.3f;
 
-    // Смерть врага
+    UFUNCTION(BlueprintCallable, Category = "Enemy Combat")
+    void PerformAttack(AActor* Target);
+
     UFUNCTION(BlueprintNativeEvent, Category = "Enemy")
     void OnEnemyDeath(AActor* DeadActor);
+
     virtual void OnEnemyDeath_Implementation(AActor* DeadActor);
 
 protected:
     virtual void BeginPlay() override;
 
-private:
     float LastAttackTime = -999.0f;
 };

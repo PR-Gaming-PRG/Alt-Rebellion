@@ -7,6 +7,8 @@
 #include "Core/AR_GameInstance.h"
 #include "Loot/AR_LootDrop.h"
 
+FOnAnyEnemyKilled AAR_EnemyBase::OnAnyEnemyKilled;
+
 AAR_EnemyBase::AAR_EnemyBase()
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -28,22 +30,40 @@ void AAR_EnemyBase::BeginPlay()
 
 void AAR_EnemyBase::PerformAttack(AActor* Target)
 {
-    if (!Target) return;
+    if (!Target)
+    {
+        return;
+    }
 
     float CurrentTime = GetWorld()->GetTimeSeconds();
-    if (CurrentTime - LastAttackTime < AttackCooldown) return;
+
+    if (CurrentTime - LastAttackTime < AttackCooldown)
+    {
+        return;
+    }
+
     LastAttackTime = CurrentTime;
 
-    // Проверяем дистанцию
     float Distance = FVector::Dist(GetActorLocation(), Target->GetActorLocation());
-    if (Distance > AttackRange) return;
 
-    // Применяем урон через HealthComponent цели
+    if (Distance > AttackRange)
+    {
+        return;
+    }
+
     UAR_HealthComponent* TargetHealth = Target->FindComponentByClass<UAR_HealthComponent>();
+
     if (TargetHealth)
     {
         TargetHealth->ApplyDamageWithCauser(AttackDamage, nullptr, this);
-        UE_LOG(LogTemp, Warning, TEXT("Enemy attacked %s for %.1f damage"), *Target->GetName(), AttackDamage);
+
+        UE_LOG(
+            LogTemp,
+            Warning,
+            TEXT("Enemy attacked %s for %.1f damage"),
+            *Target->GetName(),
+            AttackDamage
+        );
     }
 }
 
@@ -52,8 +72,22 @@ void AAR_EnemyBase::OnEnemyDeath_Implementation(AActor* DeadActor)
     SetActorEnableCollision(false);
     GetCharacterMovement()->DisableMovement();
 
-    UE_LOG(LogTemp, Warning, TEXT("Enemy %s died! Reward: %d tokens"), *GetName(), TokenReward);
-    UE_LOG(LogTemp, Warning, TEXT("LootClasses count: %d"), LootClasses.Num());
+    OnAnyEnemyKilled.Broadcast(this);
+
+    UE_LOG(
+        LogTemp,
+        Warning,
+        TEXT("Enemy %s died! Reward: %d tokens"),
+        *GetName(),
+        TokenReward
+    );
+
+    UE_LOG(
+        LogTemp,
+        Warning,
+        TEXT("LootClasses count: %d"),
+        LootClasses.Num()
+    );
 
     UAR_GameInstance* GI = Cast<UAR_GameInstance>(
         UGameplayStatics::GetGameInstance(GetWorld())
@@ -73,10 +107,10 @@ void AAR_EnemyBase::OnEnemyDeath_Implementation(AActor* DeadActor)
         );
     }
 
-    // Дроп лута
     if (LootClasses.Num() > 0 && FMath::RandRange(0.0f, 1.0f) <= LootDropChance)
     {
         int32 RandomIndex = FMath::RandRange(0, LootClasses.Num() - 1);
+
         if (LootClasses[RandomIndex])
         {
             FActorSpawnParameters SpawnParams;

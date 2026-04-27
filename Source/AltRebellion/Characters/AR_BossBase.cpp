@@ -1,5 +1,9 @@
 #include "Characters/AR_BossBase.h"
+
+#include "BehaviorTree/BlackboardComponent.h"
+#include "Characters/AR_AIController.h"
 #include "Components/AR_HealthComponent.h"
+#include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 
@@ -63,11 +67,22 @@ void AAR_BossBase::CheckPhaseTransition(
 
 void AAR_BossBase::SpawnReinforcements()
 {
-    if (!ReinforcementClass) return;
+    if (!ReinforcementClass)
+    {
+        return;
+    }
+
+    UWorld* World = GetWorld();
+
+    if (!World)
+    {
+        return;
+    }
+
+    ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(World, 0);
 
     for (int32 i = 0; i < ReinforcementsPerPhase; i++)
     {
-        // Спавним вокруг босса в случайных позициях
         FVector SpawnOffset = FVector(
             FMath::RandRange(-300.0f, 300.0f),
             FMath::RandRange(-300.0f, 300.0f),
@@ -81,12 +96,56 @@ void AAR_BossBase::SpawnReinforcements()
         SpawnParams.SpawnCollisionHandlingOverride =
             ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-        GetWorld()->SpawnActor<AAR_EnemyBase>(
+        AAR_EnemyBase* SpawnedEnemy = World->SpawnActor<AAR_EnemyBase>(
             ReinforcementClass,
             SpawnLocation,
             SpawnRotation,
             SpawnParams
         );
+
+        if (!SpawnedEnemy)
+        {
+            continue;
+        }
+
+        SpawnedEnemy->SpawnDefaultController();
+
+        AAR_AIController* AIController = Cast<AAR_AIController>(SpawnedEnemy->GetController());
+
+        if (AIController && AIController->GetBlackboardComponent() && PlayerCharacter)
+        {
+            UBlackboardComponent* Blackboard = AIController->GetBlackboardComponent();
+
+            Blackboard->SetValueAsObject(
+                AAR_AIController::BlackboardKey_TargetActor,
+                PlayerCharacter
+            );
+
+            Blackboard->SetValueAsVector(
+                AAR_AIController::BlackboardKey_TargetLocation,
+                PlayerCharacter->GetActorLocation()
+            );
+
+            Blackboard->SetValueAsBool(
+                AAR_AIController::BlackboardKey_CanSeeTarget,
+                true
+            );
+
+            UE_LOG(
+                LogTemp,
+                Warning,
+                TEXT("Reinforcement AI initialized with target: %s"),
+                *PlayerCharacter->GetName()
+            );
+        }
+        else
+        {
+            UE_LOG(
+                LogTemp,
+                Warning,
+                TEXT("Reinforcement spawned, but AI/Blackboard/Player is missing")
+            );
+        }
     }
 
     UE_LOG(LogTemp, Warning, TEXT("Boss spawned %d reinforcements"), ReinforcementsPerPhase);

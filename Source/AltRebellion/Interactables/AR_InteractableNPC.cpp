@@ -34,6 +34,8 @@ void AAR_InteractableNPC::BeginPlay()
             &AAR_InteractableNPC::OnInteractionSphereEndOverlap
         );
     }
+
+    SetInteractionEnabled(bStartInteractionEnabled);
 }
 
 void AAR_InteractableNPC::OnInteractionSphereBeginOverlap(
@@ -45,6 +47,11 @@ void AAR_InteractableNPC::OnInteractionSphereBeginOverlap(
     const FHitResult& SweepResult
 )
 {
+    if (!bInteractionEnabled)
+    {
+        return;
+    }
+
     if (!OtherActor || OtherActor == this)
     {
         return;
@@ -88,16 +95,44 @@ void AAR_InteractableNPC::OnInteractionSphereEndOverlap(
     }
 }
 
+void AAR_InteractableNPC::SetInteractionEnabled(bool bEnabled)
+{
+    bInteractionEnabled = bEnabled;
+    bPlayerInRange = false;
+
+    if (InteractionSphere)
+    {
+        InteractionSphere->SetCollisionEnabled(
+            bInteractionEnabled
+                ? ECollisionEnabled::QueryOnly
+                : ECollisionEnabled::NoCollision
+        );
+    }
+
+    if (bHideWhenDisabled)
+    {
+        SetActorHiddenInGame(!bInteractionEnabled);
+    }
+
+    UE_LOG(
+        LogTemp,
+        Warning,
+        TEXT("NPC %s interaction enabled: %s"),
+        *NPCName.ToString(),
+        bInteractionEnabled ? TEXT("true") : TEXT("false")
+    );
+}
+
 bool AAR_InteractableNPC::CanInteract() const
 {
-    return bPlayerInRange;
+    return bInteractionEnabled && bPlayerInRange;
 }
 
 void AAR_InteractableNPC::Interact(AActor* Interactor)
 {
     if (!CanInteract())
     {
-        UE_LOG(LogTemp, Warning, TEXT("Interact failed: player is not in range"));
+        UE_LOG(LogTemp, Warning, TEXT("Interact failed: NPC is not available"));
         return;
     }
 

@@ -37,12 +37,26 @@ protected:
     UPROPERTY(BlueprintReadOnly, Category = "UI")
     TObjectPtr<UUserWidget> CurrentUpgradeWidget;
 
+    // Доступен ли NPC сразу при старте уровня
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
+    bool bStartInteractionEnabled = false;
+
+    // Скрывать ли NPC, пока он недоступен
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
+    bool bHideWhenDisabled = true;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Interaction")
+    bool bInteractionEnabled = false;
+
 public:
     UFUNCTION(BlueprintCallable, Category = "Interaction")
     void Interact(AActor* Interactor);
 
     UFUNCTION(BlueprintCallable, Category = "Interaction")
     bool CanInteract() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Interaction")
+    void SetInteractionEnabled(bool bEnabled);
 
 protected:
     UFUNCTION()

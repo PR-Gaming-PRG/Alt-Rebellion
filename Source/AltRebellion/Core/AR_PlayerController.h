@@ -8,6 +8,7 @@
 class UInputMappingContext;
 class UInputAction;
 class AAR_CharacterBase;
+class AAR_InteractableNPC;
 
 UCLASS()
 class ALTREBELLION_API AAR_PlayerController : public APlayerController
@@ -71,4 +72,6 @@ private:
 
     // Получить текущего персонажа
     AAR_CharacterBase* GetARCharacter() const;
+
+    AAR_InteractableNPC* FindNearestInteractableNPC() const;
 };

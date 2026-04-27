@@ -1,26 +1,73 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
 #include "AR_InteractableNPC.generated.h"
 
+class USphereComponent;
+class UUserWidget;
+
 UCLASS()
-class ALTREBELLION_API AAR_InteractableNPC : public AActor
+class ALTREBELLION_API AAR_InteractableNPC : public ACharacter
 {
-	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	AAR_InteractableNPC();
+    GENERATED_BODY()
+
+public:
+    AAR_InteractableNPC();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+    virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+    // Радиус взаимодействия с NPC
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    TObjectPtr<USphereComponent> InteractionSphere;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
+    FText NPCName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
+    FText InteractionPromptText = FText::FromString(TEXT("Нажмите F, чтобы поговорить"));
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    TSubclassOf<UUserWidget> UpgradeWidgetClass;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Interaction")
+    bool bPlayerInRange = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "UI")
+    TObjectPtr<UUserWidget> CurrentUpgradeWidget;
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "Interaction")
+    void Interact(AActor* Interactor);
+
+    UFUNCTION(BlueprintCallable, Category = "Interaction")
+    bool CanInteract() const;
+
+protected:
+    UFUNCTION()
+    void OnInteractionSphereBeginOverlap(
+        UPrimitiveComponent* OverlappedComponent,
+        AActor* OtherActor,
+        UPrimitiveComponent* OtherComp,
+        int32 OtherBodyIndex,
+        bool bFromSweep,
+        const FHitResult& SweepResult
+    );
+
+    UFUNCTION()
+    void OnInteractionSphereEndOverlap(
+        UPrimitiveComponent* OverlappedComponent,
+        AActor* OtherActor,
+        UPrimitiveComponent* OtherComp,
+        int32 OtherBodyIndex
+    );
+
+    UFUNCTION(BlueprintNativeEvent, Category = "Interaction")
+    void OnInteract(AActor* Interactor);
+
+    virtual void OnInteract_Implementation(AActor* Interactor);
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void OpenUpgradeMenu(AActor* Interactor);
 };

@@ -26,7 +26,7 @@ void UAR_OverheatAbility::Activate_Implementation(AAR_CharacterBase* OwnerCharac
     if (!bIsActive)
     {
         PreviousDamageMultiplier = OwnerCharacter->DamageMultiplier;
-        OwnerCharacter->DamageMultiplier *= DamageMultiplier;
+        OwnerCharacter->DamageMultiplier *= DamageMultiplier * GetUpgradeDamageMultiplier();
         bIsActive = true;
     }
 

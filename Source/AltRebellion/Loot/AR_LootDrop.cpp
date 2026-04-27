@@ -2,6 +2,7 @@
 
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/AR_AbilityComponent.h"
 #include "Components/AR_HealthComponent.h"
 #include "Components/AR_WeaponComponent.h"
 #include "Characters/AR_CharacterBase.h"
@@ -141,9 +142,28 @@ void AAR_LootDrop::PickUp(AActor* Collector)
         }
 
         case ELootType::AbilityBoost:
-            // Позже здесь: применить буст способностей
-            UE_LOG(LogTemp, Warning, TEXT("AbilityBoost picked up!"));
+        {
+            if (Character->AbilityComponent)
+            {
+                if (Value > 0.0f)
+                {
+                    Character->AbilityComponent->ReduceAbilityCooldowns(Value);
+                }
+                else
+                {
+                    Character->AbilityComponent->ResetAbilityCooldowns();
+                }
+
+                UE_LOG(
+                    LogTemp,
+                    Warning,
+                    TEXT("AbilityBoost picked up. Cooldowns reduced by %.1f seconds"),
+                    Value
+                );
+            }
+
             break;
+        }
     }
 
     OnPickedUp(Collector);

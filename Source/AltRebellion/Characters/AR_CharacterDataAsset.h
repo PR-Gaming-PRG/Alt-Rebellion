@@ -4,6 +4,9 @@
 #include "Engine/DataAsset.h"
 #include "AR_CharacterDataAsset.generated.h"
 
+class UDataTable;
+class USkeletalMesh;
+
 UCLASS(BlueprintType)
 class ALTREBELLION_API UAR_CharacterDataAsset : public UDataAsset
 {
@@ -21,6 +24,12 @@ public:
     // Описание для экрана выбора
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character")
     FText Description;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character|Preview")
+    TObjectPtr<USkeletalMesh> PreviewSkeletalMesh;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character|Preview")
+    FVector PreviewMeshScale = FVector(1.0f);
 
     // --- Характеристики ---
 
@@ -55,6 +64,11 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
     float ReloadTime = 1.5f;
+
+    // Таблица уровней способностей этого персонажа.
+    // Строки должны использовать FAR_AbilityUpgradeRow.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Progression")
+    TObjectPtr<UDataTable> AbilityUpgradeTable;
 
     // --- Иконка для UI ---
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")

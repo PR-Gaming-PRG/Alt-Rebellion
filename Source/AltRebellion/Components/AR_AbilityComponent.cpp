@@ -1,11 +1,14 @@
 #include "Components/AR_AbilityComponent.h"
 
 #include "Characters/AR_CharacterBase.h"
+#include "Core/AR_GameInstance.h"
 #include "Components/AR_HealthComponent.h"
 #include "Engine/World.h"
+#include "Engine/DataTable.h"
 #include "Engine/OverlapResult.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 UAR_AbilityComponent::UAR_AbilityComponent()
 {
@@ -42,6 +45,29 @@ void UAR_AbilityComponent::BeginPlay()
   {
     Ultimate->InitializeAbility(OwnerCharacter);
   }
+
+  if (UAR_GameInstance* GI = Cast<UAR_GameInstance>(UGameplayStatics::GetGameInstance(this)))
+  {
+    GI->OnAbilityUpgraded.AddDynamic(
+        this,
+        &UAR_AbilityComponent::HandleAbilityUpgraded
+    );
+  }
+
+  ApplySavedUpgradeLevels();
+}
+
+void UAR_AbilityComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+  if (UAR_GameInstance* GI = Cast<UAR_GameInstance>(UGameplayStatics::GetGameInstance(this)))
+  {
+    GI->OnAbilityUpgraded.RemoveDynamic(
+        this,
+        &UAR_AbilityComponent::HandleAbilityUpgraded
+    );
+  }
+
+  Super::EndPlay(EndPlayReason);
 }
 
 UAR_AbilityBase* UAR_AbilityComponent::CreateAbilityInstance(TSubclassOf<UAR_AbilityBase> AbilityClass)
@@ -120,6 +146,39 @@ bool UAR_AbilityBase::IsOnCooldown() const
   return GetCooldownRemaining() > 0.0f;
 }
 
+float UAR_AbilityBase::GetUpgradedDamage(float BaseDamage) const
+{
+  return BaseDamage * UpgradeDamageMultiplier;
+}
+
+void UAR_AbilityBase::ResetUpgradeState()
+{
+  if (BaseCooldownBeforeUpgrades < 0.0f)
+  {
+    BaseCooldownBeforeUpgrades = Cooldown;
+  }
+
+  Cooldown = BaseCooldownBeforeUpgrades;
+  AbilityLevel = 0;
+  UpgradeDamageMultiplier = 1.0f;
+}
+
+void UAR_AbilityBase::ResetCooldown()
+{
+  LastActivationTime = -999.0f;
+}
+
+void UAR_AbilityBase::ReduceCooldown(float Seconds)
+{
+  if (Seconds <= 0.0f)
+  {
+    ResetCooldown();
+    return;
+  }
+
+  LastActivationTime -= Seconds;
+}
+
 void UAR_AbilityBase::StartCooldown()
 {
   UWorld* World = GetWorld();
@@ -150,6 +209,26 @@ void UAR_AbilityBase::ActivateAtLocation_Implementation(
 
 void UAR_AbilityBase::Deactivate_Implementation()
 {
+}
+
+void UAR_AbilityBase::ApplyUpgradeRow_Implementation(const FAR_AbilityUpgradeRow& UpgradeRow)
+{
+  if (BaseCooldownBeforeUpgrades < 0.0f)
+  {
+    BaseCooldownBeforeUpgrades = Cooldown;
+  }
+
+  AbilityLevel = FMath::Max(AbilityLevel, UpgradeRow.Level);
+
+  if (UpgradeRow.CooldownMultiplier > 0.0f)
+  {
+    Cooldown *= UpgradeRow.CooldownMultiplier;
+  }
+
+  if (!FMath::IsNearlyZero(UpgradeRow.DamageMultiplierBonus))
+  {
+    UpgradeDamageMultiplier *= FMath::Max(0.0f, 1.0f + UpgradeRow.DamageMultiplierBonus);
+  }
 }
 
 void UAR_AbilityBase::ApplyAreaDamage(
@@ -202,7 +281,7 @@ void UAR_AbilityBase::ApplyAreaDamage(
       continue;
     }
 
-    TargetHealth->ApplyDamageWithCauser(Damage, nullptr, OwnerCharacter);
+    TargetHealth->ApplyDamageWithCauser(GetUpgradedDamage(Damage), nullptr, OwnerCharacter);
     DamagedActors.Add(TargetActor);
 
     if (KnockbackStrength > 0.0f)
@@ -224,6 +303,156 @@ void UAR_AbilityBase::ApplyAreaDamage(
         );
       }
     }
+  }
+}
+
+const FAR_AbilityUpgradeRow* UAR_AbilityComponent::FindUpgradeRow(
+    FName AbilityID,
+    int32 TargetLevel
+) const
+{
+  if (AbilityID.IsNone() || TargetLevel <= 0 || !AbilityUpgradeTable)
+  {
+    return nullptr;
+  }
+
+  TArray<FAR_AbilityUpgradeRow*> Rows;
+  AbilityUpgradeTable->GetAllRows<FAR_AbilityUpgradeRow>(
+      TEXT("UAR_AbilityComponent::FindUpgradeRow"),
+      Rows
+  );
+
+  for (const FAR_AbilityUpgradeRow* Row : Rows)
+  {
+    if (Row && Row->AbilityID == AbilityID && Row->Level == TargetLevel)
+    {
+      return Row;
+    }
+  }
+
+  return nullptr;
+}
+
+void UAR_AbilityComponent::ApplySavedUpgradeLevels()
+{
+  ApplySavedUpgradeLevelToAbility(Passive.Get());
+  ApplySavedUpgradeLevelToAbility(Ability1.Get());
+  ApplySavedUpgradeLevelToAbility(Ability2.Get());
+  ApplySavedUpgradeLevelToAbility(Ultimate.Get());
+}
+
+void UAR_AbilityComponent::ApplySavedUpgradeLevelToAbility(UAR_AbilityBase* Ability)
+{
+  if (!Ability || Ability->AbilityID.IsNone())
+  {
+    return;
+  }
+
+  const UAR_GameInstance* GI = Cast<UAR_GameInstance>(
+      UGameplayStatics::GetGameInstance(this)
+  );
+
+  if (!GI)
+  {
+    return;
+  }
+
+  Ability->ResetUpgradeState();
+
+  const int32 SavedLevel = GI->GetAbilityLevel(Ability->AbilityID);
+
+  if (SavedLevel <= 1)
+  {
+    return;
+  }
+
+  if (!AbilityUpgradeTable)
+  {
+    Ability->AbilityLevel = SavedLevel;
+    return;
+  }
+
+  for (int32 TargetLevel = 2; TargetLevel <= SavedLevel; ++TargetLevel)
+  {
+    const FAR_AbilityUpgradeRow* UpgradeRow = FindUpgradeRow(
+        Ability->AbilityID,
+        TargetLevel
+    );
+
+    if (UpgradeRow)
+    {
+      Ability->ApplyUpgradeRow(*UpgradeRow);
+    }
+  }
+
+  Ability->AbilityLevel = SavedLevel;
+}
+
+void UAR_AbilityComponent::HandleAbilityUpgraded(FName AbilityID, int32 NewLevel)
+{
+  (void)NewLevel;
+
+  if (AbilityID.IsNone())
+  {
+    return;
+  }
+
+  TArray<UAR_AbilityBase*> Abilities = {
+      Passive.Get(),
+      Ability1.Get(),
+      Ability2.Get(),
+      Ultimate.Get()
+  };
+
+  for (UAR_AbilityBase* Ability : Abilities)
+  {
+    if (Ability && Ability->AbilityID == AbilityID)
+    {
+      ApplySavedUpgradeLevelToAbility(Ability);
+      return;
+    }
+  }
+}
+
+void UAR_AbilityComponent::ResetAbilityCooldowns()
+{
+  if (Ability1)
+  {
+    Ability1->ResetCooldown();
+  }
+
+  if (Ability2)
+  {
+    Ability2->ResetCooldown();
+  }
+
+  if (Ultimate)
+  {
+    Ultimate->ResetCooldown();
+  }
+}
+
+void UAR_AbilityComponent::ReduceAbilityCooldowns(float Seconds)
+{
+  if (Seconds <= 0.0f)
+  {
+    ResetAbilityCooldowns();
+    return;
+  }
+
+  if (Ability1)
+  {
+    Ability1->ReduceCooldown(Seconds);
+  }
+
+  if (Ability2)
+  {
+    Ability2->ReduceCooldown(Seconds);
+  }
+
+  if (Ultimate)
+  {
+    Ultimate->ReduceCooldown(Seconds);
   }
 }
 

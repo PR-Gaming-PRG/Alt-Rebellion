@@ -1,10 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Abilities/AR_AbilityUpgradeData.h"
 #include "Components/ActorComponent.h"
 #include "AR_AbilityComponent.generated.h"
 
 class AAR_CharacterBase;
+class UDataTable;
 class UTexture2D;
 
 UENUM(BlueprintType)
@@ -37,6 +39,12 @@ float Cooldown = 5.0f;
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
 float Duration = 0.0f;
 
+UPROPERTY(BlueprintReadOnly, Category = "Ability|Upgrade")
+int32 AbilityLevel = 0;
+
+UPROPERTY(BlueprintReadOnly, Category = "Ability|Upgrade")
+float UpgradeDamageMultiplier = 1.0f;
+
 UFUNCTION(BlueprintCallable, Category = "Ability")
 bool IsReady() const;
 
@@ -54,6 +62,24 @@ bool IsOnCooldown() const;
 
 UFUNCTION(BlueprintCallable, Category = "Ability")
 float GetLastActivationTime() const { return LastActivationTime; }
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ability|Upgrade")
+int32 GetAbilityLevel() const { return AbilityLevel; }
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ability|Upgrade")
+float GetUpgradeDamageMultiplier() const { return UpgradeDamageMultiplier; }
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ability|Upgrade")
+float GetUpgradedDamage(float BaseDamage) const;
+
+UFUNCTION(BlueprintCallable, Category = "Ability|Upgrade")
+void ResetUpgradeState();
+
+UFUNCTION(BlueprintCallable, Category = "Ability|Upgrade")
+void ResetCooldown();
+
+UFUNCTION(BlueprintCallable, Category = "Ability|Upgrade")
+void ReduceCooldown(float Seconds);
 
 // Вызывается один раз после создания способности.
 // Для пассивок здесь будем подписываться на события.
@@ -77,6 +103,11 @@ void Deactivate();
 
 virtual void Deactivate_Implementation();
 
+UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability|Upgrade")
+void ApplyUpgradeRow(const FAR_AbilityUpgradeRow& UpgradeRow);
+
+virtual void ApplyUpgradeRow_Implementation(const FAR_AbilityUpgradeRow& UpgradeRow);
+
 void StartCooldown();
 
 protected:
@@ -84,6 +115,8 @@ UPROPERTY()
 TObjectPtr<AAR_CharacterBase> CachedOwnerCharacter;
 
 float LastActivationTime = -999.0f;
+
+float BaseCooldownBeforeUpgrades = -1.0f;
 
 void ApplyAreaDamage(
     AAR_CharacterBase* OwnerCharacter,
@@ -104,6 +137,7 @@ UAR_AbilityComponent();
 
 protected:
 virtual void BeginPlay() override;
+virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 // Пассивная способность
@@ -121,6 +155,9 @@ TSubclassOf<UAR_AbilityBase> Ability2Class;
 // Ультимативная способность
 UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
 TSubclassOf<UAR_AbilityBase> UltimateClass;
+
+UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities|Upgrades")
+TObjectPtr<UDataTable> AbilityUpgradeTable;
 
 UPROPERTY(BlueprintReadOnly, Category = "Abilities")
 TObjectPtr<UAR_AbilityBase> Passive;
@@ -176,6 +213,20 @@ UAR_AbilityBase* GetAbility2() const { return Ability2.Get(); }
 UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities")
 UAR_AbilityBase* GetUltimateAbility() const { return Ultimate.Get(); }
 
+UFUNCTION(BlueprintCallable, Category = "Abilities|Upgrades")
+void ApplySavedUpgradeLevels();
+
+UFUNCTION(BlueprintCallable, Category = "Abilities|Upgrades")
+void ResetAbilityCooldowns();
+
+UFUNCTION(BlueprintCallable, Category = "Abilities|Upgrades")
+void ReduceAbilityCooldowns(float Seconds);
+
 private:
+UFUNCTION()
+void HandleAbilityUpgraded(FName AbilityID, int32 NewLevel);
+
 UAR_AbilityBase* CreateAbilityInstance(TSubclassOf<UAR_AbilityBase> AbilityClass);
+void ApplySavedUpgradeLevelToAbility(UAR_AbilityBase* Ability);
+const FAR_AbilityUpgradeRow* FindUpgradeRow(FName AbilityID, int32 TargetLevel) const;
 };

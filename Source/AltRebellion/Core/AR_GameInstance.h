@@ -1,12 +1,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Abilities/AR_AbilityUpgradeData.h"
 #include "Engine/GameInstance.h"
 #include "Core/AR_SaveGame.h"
 #include "AR_GameInstance.generated.h"
 
 class UDataTable;
-struct FAR_AbilityUpgradeRow;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+    FOnAbilityUpgraded,
+    FName, AbilityID,
+    int32, NewLevel
+);
 
 UCLASS()
 class ALTREBELLION_API UAR_GameInstance : public UGameInstance
@@ -47,6 +53,9 @@ public:
     // Уровни способностей
     UPROPERTY(BlueprintReadWrite, Category = "Game State")
     TMap<FName, int32> AbilityLevels;
+
+    UPROPERTY(BlueprintAssignable, Category = "Progression")
+    FOnAbilityUpgraded OnAbilityUpgraded;
 
     // Настройки
     UPROPERTY(BlueprintReadWrite, Category = "Game State")
@@ -100,6 +109,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Progression")
     void SetAbilityLevel(FName AbilityID, int32 NewLevel);
 
+    // Разблокировать способность без изменения уровня
+    UFUNCTION(BlueprintCallable, Category = "Progression")
+    void UnlockAbility(FName AbilityID);
+
+    // Проверить, разблокирована ли способность
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Progression")
+    bool IsAbilityUnlocked(FName AbilityID) const;
+
     // Прокачать способность за жетоны
     UFUNCTION(BlueprintCallable, Category = "Progression")
     bool UpgradeAbility(FName AbilityID, int32 Cost, int32 MaxLevel);
@@ -115,6 +132,23 @@ public:
     // Получить стоимость следующего уровня способности
     UFUNCTION(BlueprintCallable, Category = "Progression")
     int32 GetNextAbilityUpgradeCost(FName AbilityID, UDataTable* UpgradeTable) const;
+
+    // Получить строку конкретного уровня способности для UI
+    UFUNCTION(BlueprintCallable, Category = "Progression")
+    bool GetAbilityUpgradeRow(
+        FName AbilityID,
+        int32 Level,
+        UDataTable* UpgradeTable,
+        FAR_AbilityUpgradeRow& OutUpgradeRow
+    ) const;
+
+    // Получить полную строку следующего улучшения для UI
+    UFUNCTION(BlueprintCallable, Category = "Progression")
+    bool GetNextAbilityUpgradeRow(
+        FName AbilityID,
+        UDataTable* UpgradeTable,
+        FAR_AbilityUpgradeRow& OutUpgradeRow
+    ) const;
 
     // Получить максимальный уровень способности из таблицы
     UFUNCTION(BlueprintCallable, Category = "Progression")

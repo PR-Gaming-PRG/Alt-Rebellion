@@ -46,7 +46,7 @@ void UAR_FocusAbility::HandleWeaponHit(AActor* TargetActor, float Damage, bool b
     if (!bIsActive)
     {
         PreviousDamageMultiplier = CachedOwnerCharacter->DamageMultiplier;
-        CachedOwnerCharacter->DamageMultiplier *= DamageMultiplier;
+        CachedOwnerCharacter->DamageMultiplier *= DamageMultiplier * GetUpgradeDamageMultiplier();
         bIsActive = true;
     }
 

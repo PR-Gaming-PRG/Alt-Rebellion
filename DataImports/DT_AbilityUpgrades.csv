@@ -1,0 +1,28 @@
+Name,AbilityID,Level,TokenCost,DisplayName,Description,DamageMultiplierBonus,CooldownMultiplier
+Anya_RocketBarrage_Lv1,Anya_RocketBarrage,1,0,"Ракетный залп I","Базовый уровень ракетного залпа.",0.00,1.00
+Anya_RocketBarrage_Lv2,Anya_RocketBarrage,2,2,"Ракетный залп II","Ракетный залп наносит больше урона.",0.10,0.95
+Anya_RocketBarrage_Lv3,Anya_RocketBarrage,3,4,"Ракетный залп III","Максимально усиливает ракетный залп.",0.20,0.90
+Anya_Shockwave_Lv1,Anya_Shockwave,1,0,"Ударная волна I","Базовый уровень ударной волны.",0.00,1.00
+Anya_Shockwave_Lv2,Anya_Shockwave,2,2,"Ударная волна II","Ударная волна наносит больше урона.",0.10,0.95
+Anya_Shockwave_Lv3,Anya_Shockwave,3,4,"Ударная волна III","Максимально усиливает ударную волну.",0.20,0.90
+Anya_Overheat_Lv1,Anya_Overheat,1,0,"Перегрев I","Базовый уровень перегрева.",0.00,1.00
+Anya_Overheat_Lv2,Anya_Overheat,2,2,"Перегрев II","Перегрев сильнее повышает урон.",0.10,0.95
+Anya_Overheat_Lv3,Anya_Overheat,3,4,"Перегрев III","Максимально усиливает перегрев.",0.20,0.90
+Lena_Dash_Lv1,Lena_Dash,1,0,"Рывок I","Базовый уровень рывка.",0.00,1.00
+Lena_Dash_Lv2,Lena_Dash,2,2,"Рывок II","Рывок быстрее восстанавливается.",0.00,0.90
+Lena_Dash_Lv3,Lena_Dash,3,4,"Рывок III","Максимально сокращает восстановление рывка.",0.00,0.85
+Lena_PointBlankShot_Lv1,Lena_PointBlankShot,1,0,"Выстрел в упор I","Базовый уровень выстрела в упор.",0.00,1.00
+Lena_PointBlankShot_Lv2,Lena_PointBlankShot,2,2,"Выстрел в упор II","Следующий выстрел наносит больше урона.",0.10,0.95
+Lena_PointBlankShot_Lv3,Lena_PointBlankShot,3,4,"Выстрел в упор III","Максимально усиливает выстрел в упор.",0.20,0.90
+Lena_Berserk_Lv1,Lena_Berserk,1,0,"Берсерк I","Базовый уровень берсерка.",0.00,1.00
+Lena_Berserk_Lv2,Lena_Berserk,2,3,"Берсерк II","Берсерк сильнее повышает урон.",0.10,0.90
+Lena_Berserk_Lv3,Lena_Berserk,3,5,"Берсерк III","Максимально усиливает берсерк.",0.20,0.85
+Alisa_ElectroTrap_Lv1,Alisa_ElectroTrap,1,0,"Электроловушка I","Базовый уровень электроловушки.",0.00,1.00
+Alisa_ElectroTrap_Lv2,Alisa_ElectroTrap,2,2,"Электроловушка II","Электроловушка наносит больше урона.",0.10,0.95
+Alisa_ElectroTrap_Lv3,Alisa_ElectroTrap,3,4,"Электроловушка III","Максимально усиливает электроловушку.",0.20,0.90
+Alisa_Burst_Lv1,Alisa_Burst,1,0,"Очередь I","Базовый уровень очереди.",0.00,1.00
+Alisa_Burst_Lv2,Alisa_Burst,2,2,"Очередь II","Очередь наносит больше урона.",0.10,0.95
+Alisa_Burst_Lv3,Alisa_Burst,3,4,"Очередь III","Максимально усиливает очередь.",0.20,0.90
+Alisa_Overdrive_Lv1,Alisa_Overdrive,1,0,"Овердрайв I","Базовый уровень овердрайва.",0.00,1.00
+Alisa_Overdrive_Lv2,Alisa_Overdrive,2,3,"Овердрайв II","Овердрайв быстрее восстанавливается.",0.00,0.90
+Alisa_Overdrive_Lv3,Alisa_Overdrive,3,5,"Овердрайв III","Максимально сокращает восстановление овердрайва.",0.00,0.85

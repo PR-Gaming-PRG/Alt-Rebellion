@@ -26,7 +26,7 @@ void UAR_DamageBuffAbility::Activate_Implementation(AAR_CharacterBase* OwnerChar
   }
 
   PreviousDamageMultiplier = OwnerCharacter->DamageMultiplier;
-  OwnerCharacter->DamageMultiplier *= DamageMultiplierBonus;
+  OwnerCharacter->DamageMultiplier *= DamageMultiplierBonus * GetUpgradeDamageMultiplier();
 
   if (OwnerCharacter->GetCharacterMovement())
   {
@@ -48,7 +48,7 @@ void UAR_DamageBuffAbility::Activate_Implementation(AAR_CharacterBase* OwnerChar
       LogTemp,
       Warning,
       TEXT("Buff activated. Damage x%.2f, Speed x%.2f"),
-      DamageMultiplierBonus,
+      DamageMultiplierBonus * GetUpgradeDamageMultiplier(),
       SpeedMultiplierBonus
   );
 }

@@ -21,12 +21,13 @@ void UAR_PointBlankShotAbility::Activate_Implementation(AAR_CharacterBase* Owner
     return;
   }
 
-  OwnerCharacter->WeaponComponent->SetNextShotDamageMultiplier(DamageMultiplier);
+  const float FinalDamageMultiplier = DamageMultiplier * GetUpgradeDamageMultiplier();
+  OwnerCharacter->WeaponComponent->SetNextShotDamageMultiplier(FinalDamageMultiplier);
 
   UE_LOG(
       LogTemp,
       Warning,
       TEXT("Lena Point Blank Shot activated. Next shot multiplier: %.2f"),
-      DamageMultiplier
+      FinalDamageMultiplier
   );
 }

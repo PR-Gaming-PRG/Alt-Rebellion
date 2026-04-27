@@ -19,7 +19,10 @@ void UAR_BurstAbility::Activate_Implementation(AAR_CharacterBase* OwnerCharacter
         return;
     }
 
-    OwnerCharacter->WeaponComponent->AddEmpoweredShots(EmpoweredShotCount, DamageMultiplier);
+    OwnerCharacter->WeaponComponent->AddEmpoweredShots(
+        EmpoweredShotCount,
+        DamageMultiplier * GetUpgradeDamageMultiplier()
+    );
 
     UE_LOG(LogTemp, Warning, TEXT("Burst activated"));
 }

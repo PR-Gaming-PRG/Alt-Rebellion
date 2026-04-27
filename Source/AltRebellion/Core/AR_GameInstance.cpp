@@ -234,7 +234,7 @@ bool UAR_GameInstance::IsZoneLiberated(FName ZoneID) const
 int32 UAR_GameInstance::GetAbilityLevel(FName AbilityID) const
 {
     const int32* Level = AbilityLevels.Find(AbilityID);
-    return Level ? *Level : 0;
+    return Level ? FMath::Max(1, *Level) : 1;
 }
 
 void UAR_GameInstance::SetAbilityLevel(FName AbilityID, int32 NewLevel)
@@ -244,7 +244,25 @@ void UAR_GameInstance::SetAbilityLevel(FName AbilityID, int32 NewLevel)
         return;
     }
 
-    AbilityLevels.FindOrAdd(AbilityID) = FMath::Max(0, NewLevel);
+    AbilityLevels.FindOrAdd(AbilityID) = FMath::Max(1, NewLevel);
+}
+
+void UAR_GameInstance::UnlockAbility(FName AbilityID)
+{
+    if (AbilityID.IsNone())
+    {
+        return;
+    }
+
+    if (!UnlockedAbilities.Contains(AbilityID))
+    {
+        UnlockedAbilities.Add(AbilityID);
+    }
+}
+
+bool UAR_GameInstance::IsAbilityUnlocked(FName AbilityID) const
+{
+    return !AbilityID.IsNone() && UnlockedAbilities.Contains(AbilityID);
 }
 
 bool UAR_GameInstance::UpgradeAbility(FName AbilityID, int32 Cost, int32 MaxLevel)
@@ -275,13 +293,10 @@ bool UAR_GameInstance::UpgradeAbility(FName AbilityID, int32 Cost, int32 MaxLeve
 
     const int32 NewLevel = CurrentLevel + 1;
     SetAbilityLevel(AbilityID, NewLevel);
-
-    if (!UnlockedAbilities.Contains(AbilityID))
-    {
-        UnlockedAbilities.Add(AbilityID);
-    }
+    UnlockAbility(AbilityID);
 
     SaveGame();
+    OnAbilityUpgraded.Broadcast(AbilityID, NewLevel);
 
     UE_LOG(
         LogTemp,
@@ -404,6 +419,44 @@ int32 UAR_GameInstance::GetNextAbilityUpgradeCost(
     UDataTable* UpgradeTable
 ) const
 {
+    FAR_AbilityUpgradeRow UpgradeRow;
+
+    if (!GetNextAbilityUpgradeRow(AbilityID, UpgradeTable, UpgradeRow))
+    {
+        return -1;
+    }
+
+    return UpgradeRow.TokenCost;
+}
+
+bool UAR_GameInstance::GetAbilityUpgradeRow(
+    FName AbilityID,
+    int32 Level,
+    UDataTable* UpgradeTable,
+    FAR_AbilityUpgradeRow& OutUpgradeRow
+) const
+{
+    const FAR_AbilityUpgradeRow* UpgradeRow = FindUpgradeRow(
+        AbilityID,
+        Level,
+        UpgradeTable
+    );
+
+    if (!UpgradeRow)
+    {
+        return false;
+    }
+
+    OutUpgradeRow = *UpgradeRow;
+    return true;
+}
+
+bool UAR_GameInstance::GetNextAbilityUpgradeRow(
+    FName AbilityID,
+    UDataTable* UpgradeTable,
+    FAR_AbilityUpgradeRow& OutUpgradeRow
+) const
+{
     const int32 CurrentLevel = GetAbilityLevel(AbilityID);
     const int32 TargetLevel = CurrentLevel + 1;
 
@@ -415,10 +468,11 @@ int32 UAR_GameInstance::GetNextAbilityUpgradeCost(
 
     if (!UpgradeRow)
     {
-        return -1;
+        return false;
     }
 
-    return UpgradeRow->TokenCost;
+    OutUpgradeRow = *UpgradeRow;
+    return true;
 }
 
 bool UAR_GameInstance::CanUpgradeAbility(
@@ -496,13 +550,10 @@ bool UAR_GameInstance::UpgradeAbilityFromTable(
     }
 
     SetAbilityLevel(AbilityID, TargetLevel);
-
-    if (!UnlockedAbilities.Contains(AbilityID))
-    {
-        UnlockedAbilities.Add(AbilityID);
-    }
+    UnlockAbility(AbilityID);
 
     SaveGame();
+    OnAbilityUpgraded.Broadcast(AbilityID, TargetLevel);
 
     UE_LOG(
         LogTemp,

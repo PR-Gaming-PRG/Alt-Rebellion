@@ -44,6 +44,12 @@ void AAR_CharacterBase::BeginPlay()
         MoveSpeed = CharacterData->MoveSpeed;
         DamageMultiplier = CharacterData->DamageMultiplier;
         GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+
+        if (AbilityComponent && CharacterData->AbilityUpgradeTable)
+        {
+            AbilityComponent->AbilityUpgradeTable = CharacterData->AbilityUpgradeTable;
+            AbilityComponent->ApplySavedUpgradeLevels();
+        }
     }
     else
     {

@@ -49,7 +49,7 @@ void UAR_ElectroTrapAbility::ActivateAtLocation_Implementation(
         TrapRadius,
         TrapDuration,
         SlowMultiplier,
-        TickDamage,
+        GetUpgradedDamage(TickDamage),
         TickInterval
     );
 

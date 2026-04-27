@@ -1,9 +1,11 @@
 #include "Characters/AR_EnemyBase.h"
+
 #include "Components/AR_HealthComponent.h"
-#include "Loot/AR_LootDrop.h"
-#include "Core/AR_GameInstance.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Core/AR_GameInstance.h"
+#include "Loot/AR_LootDrop.h"
 
 AAR_EnemyBase::AAR_EnemyBase()
 {
@@ -56,11 +58,19 @@ void AAR_EnemyBase::OnEnemyDeath_Implementation(AActor* DeadActor)
     UAR_GameInstance* GI = Cast<UAR_GameInstance>(
         UGameplayStatics::GetGameInstance(GetWorld())
     );
-    if (GI)
+
+    if (GI && TokenReward > 0)
     {
-        int32& Tokens = GI->Resources.FindOrAdd(TEXT("Tokens"));
-        Tokens += TokenReward;
-        UE_LOG(LogTemp, Warning, TEXT("Tokens added: %d, Total: %d"), TokenReward, Tokens);
+        GI->AddResource(TEXT("Tokens"), TokenReward);
+        GI->SaveGame();
+
+        UE_LOG(
+            LogTemp,
+            Warning,
+            TEXT("Tokens added: %d, Total: %d"),
+            TokenReward,
+            GI->GetResourceAmount(TEXT("Tokens"))
+        );
     }
 
     // Дроп лута

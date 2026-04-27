@@ -27,6 +27,10 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Save")
     FName SelectedCharacter;
 
+    // Текущая зона
+    UPROPERTY(BlueprintReadWrite, Category = "Save")
+    FName CurrentZoneID;
+
     // Прогресс по зонам
     UPROPERTY(BlueprintReadWrite, Category = "Save")
     TArray<FZoneProgress> ZoneStates;
@@ -38,6 +42,12 @@ public:
     // Разблокированные способности
     UPROPERTY(BlueprintReadWrite, Category = "Save")
     TArray<FName> UnlockedAbilities;
+
+    // Уровни способностей:
+    // Key = AbilityID, Value = Level
+    // Например: Anya_RocketBarrage -> 2
+    UPROPERTY(BlueprintReadWrite, Category = "Save")
+    TMap<FName, int32> AbilityLevels;
 
     // Настройки: громкость, чувствительность
     UPROPERTY(BlueprintReadWrite, Category = "Save")

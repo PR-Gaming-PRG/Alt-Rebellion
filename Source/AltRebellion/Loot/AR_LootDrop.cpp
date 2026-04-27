@@ -1,4 +1,5 @@
 #include "Loot/AR_LootDrop.h"
+
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/AR_HealthComponent.h"
@@ -70,38 +71,72 @@ void AAR_LootDrop::PickUp(AActor* Collector)
     switch (LootType)
     {
         case ELootType::HealthPack:
+        {
             if (Character->HealthComponent)
             {
                 Character->HealthComponent->Heal(Value);
-            }
-            break;
 
+                UE_LOG(
+                    LogTemp,
+                    Warning,
+                    TEXT("Health picked up. Heal Value: %.1f"),
+                    Value
+                );
+            }
+
+            break;
+        }
+        
         case ELootType::AmmoBox:
+        {
             if (Character->WeaponComponent)
             {
-                int32 NewAmmo = Character->WeaponComponent->CurrentAmmo + Amount;
-                int32 MaxAmmo = Character->WeaponComponent->AmmoPerClip;
+                const int32 NewAmmo = Character->WeaponComponent->CurrentAmmo + Amount;
+                const int32 MaxAmmo = Character->WeaponComponent->AmmoPerClip;
+
                 Character->WeaponComponent->CurrentAmmo = FMath::Min(NewAmmo, MaxAmmo);
-                
-                // Оповещаем HUD
+
                 Character->WeaponComponent->OnAmmoChanged.Broadcast(
                     Character->WeaponComponent->CurrentAmmo,
                     Character->WeaponComponent->AmmoPerClip
                 );
+
+                UE_LOG(
+                    LogTemp,
+                    Warning,
+                    TEXT("Ammo picked up. Current Ammo: %d / %d"),
+                    Character->WeaponComponent->CurrentAmmo,
+                    Character->WeaponComponent->AmmoPerClip
+                );
             }
+
             break;
+        }
 
         case ELootType::Token:
         {
             UAR_GameInstance* GI = Cast<UAR_GameInstance>(
                 UGameplayStatics::GetGameInstance(GetWorld())
             );
+
             if (GI)
             {
-                int32& Tokens = GI->Resources.FindOrAdd(TEXT("Tokens"));
-                Tokens += Amount;
-                UE_LOG(LogTemp, Warning, TEXT("Tokens: %d"), Tokens);
+                GI->AddResource(TEXT("Tokens"), Amount);
+                GI->SaveGame();
+
+                UE_LOG(
+                    LogTemp,
+                    Warning,
+                    TEXT("Token picked up. Added: %d, Total Tokens: %d"),
+                    Amount,
+                    GI->GetResourceAmount(TEXT("Tokens"))
+                );
             }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Token pickup failed: GameInstance is null"));
+            }
+
             break;
         }
 

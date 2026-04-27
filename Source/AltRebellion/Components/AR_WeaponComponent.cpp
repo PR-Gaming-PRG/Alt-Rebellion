@@ -18,7 +18,49 @@ void UAR_WeaponComponent::BeginPlay()
 
 bool UAR_WeaponComponent::CanFire() const
 {
-    return !bIsReloading && CurrentAmmo > 0;
+    return !bIsReloading && (bInfiniteAmmo || CurrentAmmo > 0);
+}
+
+void UAR_WeaponComponent::SetNextShotDamageMultiplier(float Multiplier)
+{
+  NextShotDamageMultiplier = FMath::Max(1.0f, Multiplier);
+
+  UE_LOG(
+      LogTemp,
+      Warning,
+      TEXT("Next shot damage multiplier set: %.2f"),
+      NextShotDamageMultiplier
+  );
+}
+
+void UAR_WeaponComponent::AddEmpoweredShots(int32 ShotCount, float Multiplier)
+{
+    if (ShotCount <= 0)
+    {
+        return;
+    }
+
+    EmpoweredShotsRemaining += ShotCount;
+    EmpoweredShotDamageMultiplier = FMath::Max(1.0f, Multiplier);
+
+    UE_LOG(
+        LogTemp,
+        Warning,
+        TEXT("Empowered shots added: %d, multiplier: %.2f"),
+        EmpoweredShotsRemaining,
+        EmpoweredShotDamageMultiplier
+    );
+}
+
+void UAR_WeaponComponent::SetInfiniteAmmo(bool bNewInfiniteAmmo)
+{
+    bInfiniteAmmo = bNewInfiniteAmmo;
+
+    if (bInfiniteAmmo)
+    {
+        bIsReloading = false;
+        GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+    }
 }
 
 void UAR_WeaponComponent::Fire(FVector TargetLocation)
@@ -30,8 +72,11 @@ void UAR_WeaponComponent::Fire(FVector TargetLocation)
     if (CurrentTime - LastFireTime < FireInterval) return;
     LastFireTime = CurrentTime;
 
-    CurrentAmmo--;
-    OnAmmoChanged.Broadcast(CurrentAmmo, AmmoPerClip);
+    if (!bInfiniteAmmo)
+    {
+        CurrentAmmo--;
+        OnAmmoChanged.Broadcast(CurrentAmmo, AmmoPerClip);
+    }
 
     // Hitscan - луч от владельца к цели
     AActor* Owner = GetOwner();
@@ -68,14 +113,32 @@ void UAR_WeaponComponent::Fire(FVector TargetLocation)
 
         if (TargetHealth)
         {
+            const bool bWasDead = TargetHealth->IsDead();
             float FinalDamage = Damage;
 
             if (AAR_CharacterBase* OwnerCharacter = Cast<AAR_CharacterBase>(Owner))
             {
-                FinalDamage *= OwnerCharacter->DamageMultiplier;
+              FinalDamage *= OwnerCharacter->DamageMultiplier;
             }
 
-            TargetHealth->ApplyDamage(FinalDamage, nullptr);
+            FinalDamage *= NextShotDamageMultiplier;
+            NextShotDamageMultiplier = 1.0f;
+
+            if (EmpoweredShotsRemaining > 0)
+            {
+                FinalDamage *= EmpoweredShotDamageMultiplier;
+                EmpoweredShotsRemaining--;
+            }
+
+            TargetHealth->ApplyDamageWithCauser(FinalDamage, nullptr, Owner);
+            const bool bKilled = !bWasDead && TargetHealth->IsDead();
+
+            OnWeaponHit.Broadcast(HitResult.GetActor(), FinalDamage, bKilled);
+
+            if (bKilled)
+            {
+                OnTargetKilled.Broadcast(HitResult.GetActor());
+            }
 
             UE_LOG(
                 LogTemp,
@@ -84,10 +147,18 @@ void UAR_WeaponComponent::Fire(FVector TargetLocation)
                 FinalDamage
             );
         }
+        else
+        {
+            OnWeaponMiss.Broadcast(TargetLocation);
+        }
+    }
+    else
+    {
+        OnWeaponMiss.Broadcast(TargetLocation);
     }
 
     // Автоперезарядка если патроны кончились
-    if (CurrentAmmo <= 0)
+    if (!bInfiniteAmmo && CurrentAmmo <= 0)
     {
         Reload();
     }

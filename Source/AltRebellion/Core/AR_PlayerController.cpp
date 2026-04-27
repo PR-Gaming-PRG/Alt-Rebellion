@@ -96,21 +96,21 @@ void AAR_PlayerController::HandleAbility1(const FInputActionValue& Value)
 {
     AAR_CharacterBase* ARCharacter = GetARCharacter();
     if (!ARCharacter || !ARCharacter->AbilityComponent) return;
-    ARCharacter->AbilityComponent->ActivateAbility1();
+    ARCharacter->AbilityComponent->ActivateAbility1AtLocation(GetAbilityTargetLocation(ARCharacter));
 }
 
 void AAR_PlayerController::HandleAbility2(const FInputActionValue& Value)
 {
     AAR_CharacterBase* ARCharacter = GetARCharacter();
     if (!ARCharacter || !ARCharacter->AbilityComponent) return;
-    ARCharacter->AbilityComponent->ActivateAbility2();
+    ARCharacter->AbilityComponent->ActivateAbility2AtLocation(GetAbilityTargetLocation(ARCharacter));
 }
 
 void AAR_PlayerController::HandleUltimate(const FInputActionValue& Value)
 {
     AAR_CharacterBase* ARCharacter = GetARCharacter();
     if (!ARCharacter || !ARCharacter->AbilityComponent) return;
-    ARCharacter->AbilityComponent->ActivateUltimate();
+    ARCharacter->AbilityComponent->ActivateUltimateAtLocation(GetAbilityTargetLocation(ARCharacter));
 }
 
 void AAR_PlayerController::HandleDodge(const FInputActionValue& Value)
@@ -150,6 +150,26 @@ void AAR_PlayerController::TogglePause()
     bIsPaused = !bIsPaused;
     SetPause(bIsPaused);
     UE_LOG(LogTemp, Warning, TEXT("Pause: %s"), bIsPaused ? TEXT("ON") : TEXT("OFF"));
+}
+
+FVector AAR_PlayerController::GetAbilityTargetLocation(const AAR_CharacterBase* ARCharacter) const
+{
+    if (!ARCharacter)
+    {
+        return FVector::ZeroVector;
+    }
+
+    FHitResult HitResult;
+    GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
+
+    if (HitResult.bBlockingHit)
+    {
+        FVector TargetLocation = HitResult.Location;
+        TargetLocation.Z = ARCharacter->GetActorLocation().Z;
+        return TargetLocation;
+    }
+
+    return ARCharacter->GetActorLocation() + ARCharacter->GetActorForwardVector() * 600.0f;
 }
 
 AAR_InteractableNPC* AAR_PlayerController::FindNearestInteractableNPC() const

@@ -19,6 +19,20 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     AActor*, DeadActor
 );
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(
+    FOnDamageTaken,
+    UAR_HealthComponent*, HealthComp,
+    float, Damage,
+    AActor*, DamageCauser,
+    const UDamageType*, DamageType
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+    FOnDeathWithCauser,
+    AActor*, DeadActor,
+    AActor*, DamageCauser
+);
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ALTREBELLION_API UAR_HealthComponent : public UActorComponent
 {
@@ -46,9 +60,18 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Health")
     FOnDeath OnDeath;
 
+    UPROPERTY(BlueprintAssignable, Category = "Health")
+    FOnDamageTaken OnDamageTaken;
+
+    UPROPERTY(BlueprintAssignable, Category = "Health")
+    FOnDeathWithCauser OnDeathWithCauser;
+
     // Применить урон
     UFUNCTION(BlueprintCallable, Category = "Health")
     void ApplyDamage(float DamageAmount, const UDamageType* DamageType);
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void ApplyDamageWithCauser(float DamageAmount, const UDamageType* DamageType, AActor* DamageCauser);
 
     // Восстановить HP
     UFUNCTION(BlueprintCallable, Category = "Health")
@@ -62,9 +85,15 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Health")
     float GetHealthPercent() const;
 
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    AActor* GetLastDamageCauser() const { return LastDamageCauser.Get(); }
+
 protected:
     virtual void BeginPlay() override;
 
 private:
     bool bIsDead = false;
+
+    UPROPERTY()
+    TWeakObjectPtr<AActor> LastDamageCauser;
 };

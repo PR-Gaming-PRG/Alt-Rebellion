@@ -13,14 +13,25 @@ void UAR_HealthComponent::BeginPlay()
 
 void UAR_HealthComponent::ApplyDamage(float DamageAmount, const UDamageType* DamageType)
 {
+    ApplyDamageWithCauser(DamageAmount, DamageType, nullptr);
+}
+
+void UAR_HealthComponent::ApplyDamageWithCauser(
+    float DamageAmount,
+    const UDamageType* DamageType,
+    AActor* DamageCauser
+)
+{
     if (bIsDead || DamageAmount <= 0.0f) return;
 
     // Применяем броню
     float ActualDamage = FMath::Max(0.0f, DamageAmount - Armor);
     CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, MaxHealth);
+    LastDamageCauser = DamageCauser;
 
     // Оповещаем подписчиков (UI, звуки и т.д.)
     OnHealthChanged.Broadcast(this, CurrentHealth, -ActualDamage, DamageType);
+    OnDamageTaken.Broadcast(this, ActualDamage, DamageCauser, DamageType);
 
     UE_LOG(LogTemp, Warning, TEXT("Health: %.1f / %.1f"), CurrentHealth, MaxHealth);
 
@@ -28,6 +39,7 @@ void UAR_HealthComponent::ApplyDamage(float DamageAmount, const UDamageType* Dam
     {
         bIsDead = true;
         OnDeath.Broadcast(GetOwner());
+        OnDeathWithCauser.Broadcast(GetOwner(), DamageCauser);
     }
 }
 

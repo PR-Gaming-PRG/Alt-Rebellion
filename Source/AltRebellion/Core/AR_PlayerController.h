@@ -73,5 +73,7 @@ private:
     // Получить текущего персонажа
     AAR_CharacterBase* GetARCharacter() const;
 
+    FVector GetAbilityTargetLocation(const AAR_CharacterBase* ARCharacter) const;
+
     AAR_InteractableNPC* FindNearestInteractableNPC() const;
 };

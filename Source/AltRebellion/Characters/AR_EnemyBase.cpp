@@ -42,7 +42,7 @@ void AAR_EnemyBase::PerformAttack(AActor* Target)
     UAR_HealthComponent* TargetHealth = Target->FindComponentByClass<UAR_HealthComponent>();
     if (TargetHealth)
     {
-        TargetHealth->ApplyDamage(AttackDamage, nullptr);
+        TargetHealth->ApplyDamageWithCauser(AttackDamage, nullptr, this);
         UE_LOG(LogTemp, Warning, TEXT("Enemy attacked %s for %.1f damage"), *Target->GetName(), AttackDamage);
     }
 }

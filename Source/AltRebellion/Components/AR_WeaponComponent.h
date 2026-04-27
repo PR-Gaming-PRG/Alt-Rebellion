@@ -10,6 +10,23 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
     int32, MaxAmmo
 );
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
+    FOnWeaponHit,
+    AActor*, TargetActor,
+    float, Damage,
+    bool, bKilled
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FOnWeaponMiss,
+    FVector, TargetLocation
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FOnTargetKilled,
+    AActor*, KilledActor
+);
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ALTREBELLION_API UAR_WeaponComponent : public UActorComponent
 {
@@ -17,6 +34,18 @@ class ALTREBELLION_API UAR_WeaponComponent : public UActorComponent
 
 public:
     UAR_WeaponComponent();
+
+    UFUNCTION(BlueprintCallable, Category = "Weapon")
+    void SetNextShotDamageMultiplier(float Multiplier);
+
+    UFUNCTION(BlueprintCallable, Category = "Weapon")
+    void AddEmpoweredShots(int32 ShotCount, float Multiplier);
+
+    UFUNCTION(BlueprintCallable, Category = "Weapon")
+    void SetInfiniteAmmo(bool bNewInfiniteAmmo);
+
+    UFUNCTION(BlueprintCallable, Category = "Weapon")
+    bool HasInfiniteAmmo() const { return bInfiniteAmmo; }
 
     // Урон одного выстрела
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
@@ -53,6 +82,15 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Weapon")
     FOnAmmoChanged OnAmmoChanged;
 
+    UPROPERTY(BlueprintAssignable, Category = "Weapon")
+    FOnWeaponHit OnWeaponHit;
+
+    UPROPERTY(BlueprintAssignable, Category = "Weapon")
+    FOnWeaponMiss OnWeaponMiss;
+
+    UPROPERTY(BlueprintAssignable, Category = "Weapon")
+    FOnTargetKilled OnTargetKilled;
+
     // Выстрел в направлении цели
     UFUNCTION(BlueprintCallable, Category = "Weapon")
     void Fire(FVector TargetLocation);
@@ -76,6 +114,14 @@ private:
 
     // Таймер для автоматической перезарядки
     FTimerHandle ReloadTimerHandle;
+
+    float NextShotDamageMultiplier = 1.0f;
+
+    int32 EmpoweredShotsRemaining = 0;
+
+    float EmpoweredShotDamageMultiplier = 1.0f;
+
+    bool bInfiniteAmmo = false;
 
     void FinishReload();
 };

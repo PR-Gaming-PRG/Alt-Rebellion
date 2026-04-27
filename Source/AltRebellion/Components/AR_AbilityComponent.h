@@ -5,104 +5,177 @@
 #include "AR_AbilityComponent.generated.h"
 
 class AAR_CharacterBase;
+class UTexture2D;
+
+UENUM(BlueprintType)
+enum class EAR_AbilitySlot : uint8
+{
+Passive UMETA(DisplayName = "Passive"),
+Ability1 UMETA(DisplayName = "Ability 1"),
+Ability2 UMETA(DisplayName = "Ability 2"),
+Ultimate UMETA(DisplayName = "Ultimate")
+};
 
 UCLASS(Abstract, BlueprintType, Blueprintable, EditInlineNew, DefaultToInstanced)
 class ALTREBELLION_API UAR_AbilityBase : public UObject
 {
-    GENERATED_BODY()
+GENERATED_BODY()
 
 public:
-    // ID способности, совпадает с ID в DT_AbilityUpgrades
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-    FName AbilityID;
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+FName AbilityID;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-    FText DisplayName;
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+FText DisplayName;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-    float Cooldown = 5.0f;
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|UI")
+TObjectPtr<UTexture2D> AbilityIcon;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-    float Duration = 0.0f;
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+float Cooldown = 5.0f;
 
-    UFUNCTION(BlueprintCallable, Category = "Ability")
-    bool IsReady() const;
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+float Duration = 0.0f;
 
-    UFUNCTION(BlueprintCallable, Category = "Ability")
-    float GetCooldownPercent() const;
+UFUNCTION(BlueprintCallable, Category = "Ability")
+bool IsReady() const;
 
-    UFUNCTION(BlueprintCallable, Category = "Ability")
-    float GetLastActivationTime() const { return LastActivationTime; }
+UFUNCTION(BlueprintCallable, Category = "Ability")
+float GetCooldownPercent() const;
 
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
-    void Activate(AAR_CharacterBase* OwnerCharacter);
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ability")
+float GetCooldownRemaining() const;
 
-    virtual void Activate_Implementation(AAR_CharacterBase* OwnerCharacter);
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ability")
+float GetCooldownOverlayPercent() const;
 
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
-    void Deactivate();
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ability")
+bool IsOnCooldown() const;
 
-    virtual void Deactivate_Implementation();
+UFUNCTION(BlueprintCallable, Category = "Ability")
+float GetLastActivationTime() const { return LastActivationTime; }
 
-    void StartCooldown();
+// Вызывается один раз после создания способности.
+// Для пассивок здесь будем подписываться на события.
+UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
+void InitializeAbility(AAR_CharacterBase* OwnerCharacter);
+
+virtual void InitializeAbility_Implementation(AAR_CharacterBase* OwnerCharacter);
+
+UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
+void Activate(AAR_CharacterBase* OwnerCharacter);
+
+virtual void Activate_Implementation(AAR_CharacterBase* OwnerCharacter);
+
+UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
+void ActivateAtLocation(AAR_CharacterBase* OwnerCharacter, FVector TargetLocation);
+
+virtual void ActivateAtLocation_Implementation(AAR_CharacterBase* OwnerCharacter, FVector TargetLocation);
+
+UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
+void Deactivate();
+
+virtual void Deactivate_Implementation();
+
+void StartCooldown();
 
 protected:
-    UPROPERTY()
-    TObjectPtr<AAR_CharacterBase> CachedOwnerCharacter;
+UPROPERTY()
+TObjectPtr<AAR_CharacterBase> CachedOwnerCharacter;
 
-    float LastActivationTime = -999.0f;
+float LastActivationTime = -999.0f;
+
+void ApplyAreaDamage(
+    AAR_CharacterBase* OwnerCharacter,
+    const FVector& Center,
+    float Radius,
+    float Damage,
+    float KnockbackStrength = 0.0f
+) const;
 };
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ALTREBELLION_API UAR_AbilityComponent : public UActorComponent
 {
-    GENERATED_BODY()
+GENERATED_BODY()
 
 public:
-    UAR_AbilityComponent();
+UAR_AbilityComponent();
 
 protected:
-    virtual void BeginPlay() override;
+virtual void BeginPlay() override;
 
 public:
-    // Классы способностей, назначаются в BP_Anya / BP_Lena / BP_Alisa
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
-    TSubclassOf<UAR_AbilityBase> Ability1Class;
+// Пассивная способность
+UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+TSubclassOf<UAR_AbilityBase> PassiveClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
-    TSubclassOf<UAR_AbilityBase> Ability2Class;
+// Активная способность 1
+UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+TSubclassOf<UAR_AbilityBase> Ability1Class;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
-    TSubclassOf<UAR_AbilityBase> UltimateClass;
+// Активная способность 2
+UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+TSubclassOf<UAR_AbilityBase> Ability2Class;
 
-    // Созданные runtime-объекты способностей
-    UPROPERTY(BlueprintReadOnly, Category = "Abilities")
-    TObjectPtr<UAR_AbilityBase> Ability1;
+// Ультимативная способность
+UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+TSubclassOf<UAR_AbilityBase> UltimateClass;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Abilities")
-    TObjectPtr<UAR_AbilityBase> Ability2;
+UPROPERTY(BlueprintReadOnly, Category = "Abilities")
+TObjectPtr<UAR_AbilityBase> Passive;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Abilities")
-    TObjectPtr<UAR_AbilityBase> Ultimate;
+UPROPERTY(BlueprintReadOnly, Category = "Abilities")
+TObjectPtr<UAR_AbilityBase> Ability1;
 
-    UFUNCTION(BlueprintCallable, Category = "Abilities")
-    void ActivateAbility1();
+UPROPERTY(BlueprintReadOnly, Category = "Abilities")
+TObjectPtr<UAR_AbilityBase> Ability2;
 
-    UFUNCTION(BlueprintCallable, Category = "Abilities")
-    void ActivateAbility2();
+UPROPERTY(BlueprintReadOnly, Category = "Abilities")
+TObjectPtr<UAR_AbilityBase> Ultimate;
 
-    UFUNCTION(BlueprintCallable, Category = "Abilities")
-    void ActivateUltimate();
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+void ActivateAbility1();
 
-    UFUNCTION(BlueprintCallable, Category = "Abilities")
-    float GetAbility1CooldownPercent() const;
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+void ActivateAbility2();
 
-    UFUNCTION(BlueprintCallable, Category = "Abilities")
-    float GetAbility2CooldownPercent() const;
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+void ActivateUltimate();
 
-    UFUNCTION(BlueprintCallable, Category = "Abilities")
-    float GetUltimateCooldownPercent() const;
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+void ActivateAbility1AtLocation(FVector TargetLocation);
+
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+void ActivateAbility2AtLocation(FVector TargetLocation);
+
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+void ActivateUltimateAtLocation(FVector TargetLocation);
+
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+float GetAbility1CooldownPercent() const;
+
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+float GetAbility2CooldownPercent() const;
+
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+float GetUltimateCooldownPercent() const;
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities")
+UAR_AbilityBase* GetAbilityBySlot(EAR_AbilitySlot Slot) const;
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities")
+UAR_AbilityBase* GetPassiveAbility() const { return Passive.Get(); }
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities")
+UAR_AbilityBase* GetAbility1() const { return Ability1.Get(); }
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities")
+UAR_AbilityBase* GetAbility2() const { return Ability2.Get(); }
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities")
+UAR_AbilityBase* GetUltimateAbility() const { return Ultimate.Get(); }
 
 private:
-    UAR_AbilityBase* CreateAbilityInstance(TSubclassOf<UAR_AbilityBase> AbilityClass);
+UAR_AbilityBase* CreateAbilityInstance(TSubclassOf<UAR_AbilityBase> AbilityClass);
 };

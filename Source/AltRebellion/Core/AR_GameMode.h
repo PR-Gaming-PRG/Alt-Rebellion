@@ -4,6 +4,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "AR_GameMode.generated.h"
 
+class AAR_CharacterBase;
+
 UCLASS()
 class ALTREBELLION_API AAR_GameMode : public AGameModeBase
 {
@@ -11,6 +13,12 @@ class ALTREBELLION_API AAR_GameMode : public AGameModeBase
 
 public:
     AAR_GameMode();
+
+    virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
+
+    // Соответствие CharacterID из GameInstance и Blueprint-класса игрока для спавна на уровне
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Characters", meta = (DisplayName = "Character Pawn Classes"))
+    TMap<FName, TSubclassOf<AAR_CharacterBase>> CharacterPawnClasses;
 
     // Вызывается когда все враги в волне уничтожены
     UFUNCTION(BlueprintCallable, Category = "Game Mode")

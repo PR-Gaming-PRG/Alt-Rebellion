@@ -4,50 +4,55 @@
 #include "Components/ActorComponent.h"
 #include "AR_AbilityComponent.generated.h"
 
-// Базовый класс способности
-UCLASS(Abstract, BlueprintType, Blueprintable)
+class AAR_CharacterBase;
+
+UCLASS(Abstract, BlueprintType, Blueprintable, EditInlineNew, DefaultToInstanced)
 class ALTREBELLION_API UAR_AbilityBase : public UObject
 {
     GENERATED_BODY()
 
 public:
-    // Геттер для кулдауна (используется в AbilityComponent)
-    float GetLastActivationTime() const { return LastActivationTime; }
+    // ID способности, совпадает с ID в DT_AbilityUpgrades
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+    FName AbilityID;
 
-    // Время перезарядки
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+    FText DisplayName;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
     float Cooldown = 5.0f;
 
-    // Длительность эффекта
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-    float Duration = 2.0f;
+    float Duration = 0.0f;
 
-    // Название способности
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-    FName AbilityName;
-
-    // Активировать способность
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
-    void Activate(AActor* Owner);
-    virtual void Activate_Implementation(AActor* Owner) {}
-
-    // Деактивировать способность
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
-    void Deactivate();
-    virtual void Deactivate_Implementation() {}
-
-    // Готова ли способность
     UFUNCTION(BlueprintCallable, Category = "Ability")
     bool IsReady() const;
 
-    // Сбросить кулдаун (вызывается после активации)
+    UFUNCTION(BlueprintCallable, Category = "Ability")
+    float GetCooldownPercent() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Ability")
+    float GetLastActivationTime() const { return LastActivationTime; }
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
+    void Activate(AAR_CharacterBase* OwnerCharacter);
+
+    virtual void Activate_Implementation(AAR_CharacterBase* OwnerCharacter);
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Ability")
+    void Deactivate();
+
+    virtual void Deactivate_Implementation();
+
     void StartCooldown();
 
 protected:
+    UPROPERTY()
+    TObjectPtr<AAR_CharacterBase> CachedOwnerCharacter;
+
     float LastActivationTime = -999.0f;
 };
 
-// Компонент который управляет способностями персонажа
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ALTREBELLION_API UAR_AbilityComponent : public UActorComponent
 {
@@ -56,17 +61,30 @@ class ALTREBELLION_API UAR_AbilityComponent : public UActorComponent
 public:
     UAR_AbilityComponent();
 
-    // Слоты способностей
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
+protected:
+    virtual void BeginPlay() override;
+
+public:
+    // Классы способностей, назначаются в BP_Anya / BP_Lena / BP_Alisa
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+    TSubclassOf<UAR_AbilityBase> Ability1Class;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+    TSubclassOf<UAR_AbilityBase> Ability2Class;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+    TSubclassOf<UAR_AbilityBase> UltimateClass;
+
+    // Созданные runtime-объекты способностей
+    UPROPERTY(BlueprintReadOnly, Category = "Abilities")
     TObjectPtr<UAR_AbilityBase> Ability1;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
+    UPROPERTY(BlueprintReadOnly, Category = "Abilities")
     TObjectPtr<UAR_AbilityBase> Ability2;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
+    UPROPERTY(BlueprintReadOnly, Category = "Abilities")
     TObjectPtr<UAR_AbilityBase> Ultimate;
 
-    // Активировать способность по слоту
     UFUNCTION(BlueprintCallable, Category = "Abilities")
     void ActivateAbility1();
 
@@ -76,7 +94,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Abilities")
     void ActivateUltimate();
 
-    // Получить прогресс кулдауна для UI (0.0 - 1.0)
     UFUNCTION(BlueprintCallable, Category = "Abilities")
     float GetAbility1CooldownPercent() const;
 
@@ -85,4 +102,7 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Abilities")
     float GetUltimateCooldownPercent() const;
+
+private:
+    UAR_AbilityBase* CreateAbilityInstance(TSubclassOf<UAR_AbilityBase> AbilityClass);
 };

@@ -1,5 +1,6 @@
 #include "Components/AR_WeaponComponent.h"
 #include "Components/AR_HealthComponent.h"
+#include "Characters/AR_CharacterBase.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -64,9 +65,24 @@ void UAR_WeaponComponent::Fire(FVector TargetLocation)
 
         UAR_HealthComponent* TargetHealth = 
             HitResult.GetActor()->FindComponentByClass<UAR_HealthComponent>();
+
         if (TargetHealth)
         {
-            TargetHealth->ApplyDamage(Damage, nullptr);
+            float FinalDamage = Damage;
+
+            if (AAR_CharacterBase* OwnerCharacter = Cast<AAR_CharacterBase>(Owner))
+            {
+                FinalDamage *= OwnerCharacter->DamageMultiplier;
+            }
+
+            TargetHealth->ApplyDamage(FinalDamage, nullptr);
+
+            UE_LOG(
+                LogTemp,
+                Warning,
+                TEXT("Damage applied: %.1f"),
+                FinalDamage
+            );
         }
     }
 

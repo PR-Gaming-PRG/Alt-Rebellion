@@ -5,6 +5,7 @@
 #include "AR_CharacterDataAsset.generated.h"
 
 class UDataTable;
+class UAnimationAsset;
 class USkeletalMesh;
 
 UCLASS(BlueprintType)
@@ -30,6 +31,9 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character|Preview")
     FVector PreviewMeshScale = FVector(1.0f);
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character|Preview")
+    TObjectPtr<UAnimationAsset> MainMenuAnimation;
 
     // --- Характеристики ---
 

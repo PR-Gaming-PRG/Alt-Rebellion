@@ -27,6 +27,7 @@ virtual void Deactivate_Implementation() override;
 private:
 float PreviousDamageMultiplier = 1.0f;
 float PreviousMoveSpeed = 600.0f;
+bool bIsActive = false;
 
 FTimerHandle DeactivateTimerHandle;
 };

@@ -189,6 +189,39 @@ void UAR_AbilityBase::StartCooldown()
   }
 }
 
+void UAR_AbilityBase::ShowBuffOnHUD(
+    FName BuffID,
+    float BuffDuration,
+    const FText& DescriptionOverride,
+    int32 StackCount,
+    int32 MaxStackCount
+)
+{
+  if (!CachedOwnerCharacter || !CachedOwnerCharacter->AbilityComponent || BuffID.IsNone())
+  {
+    return;
+  }
+
+  FAR_ActiveBuffInfo BuffInfo;
+  BuffInfo.BuffID = BuffID;
+  BuffInfo.DisplayName = BuffDisplayName.IsEmpty() ? DisplayName : BuffDisplayName;
+  BuffInfo.Description = DescriptionOverride.IsEmpty() ? BuffDescription : DescriptionOverride;
+  BuffInfo.Icon = BuffIcon ? BuffIcon : AbilityIcon;
+  BuffInfo.Duration = BuffDuration;
+  BuffInfo.StackCount = StackCount;
+  BuffInfo.MaxStackCount = MaxStackCount;
+
+  CachedOwnerCharacter->AbilityComponent->ApplyBuff(BuffInfo);
+}
+
+void UAR_AbilityBase::HideBuffFromHUD(FName BuffID)
+{
+  if (CachedOwnerCharacter && CachedOwnerCharacter->AbilityComponent)
+  {
+    CachedOwnerCharacter->AbilityComponent->RemoveBuff(BuffID);
+  }
+}
+
 void UAR_AbilityBase::InitializeAbility_Implementation(AAR_CharacterBase* OwnerCharacter)
 {
   CachedOwnerCharacter = OwnerCharacter;
@@ -454,6 +487,109 @@ void UAR_AbilityComponent::ReduceAbilityCooldowns(float Seconds)
   {
     Ultimate->ReduceCooldown(Seconds);
   }
+}
+
+void UAR_AbilityComponent::ApplyBuff(const FAR_ActiveBuffInfo& BuffInfo)
+{
+  if (BuffInfo.BuffID.IsNone())
+  {
+    return;
+  }
+
+  FAR_ActiveBuffInfo StoredBuff = BuffInfo;
+
+  if (const UWorld* World = GetWorld())
+  {
+    StoredBuff.StartTime = World->GetTimeSeconds();
+  }
+
+  const bool bWasAlreadyActive = ActiveBuffs.Contains(StoredBuff.BuffID);
+  ActiveBuffs.FindOrAdd(StoredBuff.BuffID) = StoredBuff;
+
+  const FAR_ActiveBuffInfo Snapshot = BuildBuffSnapshot(StoredBuff);
+
+  if (bWasAlreadyActive)
+  {
+    OnBuffUpdated.Broadcast(Snapshot);
+  }
+  else
+  {
+    OnBuffApplied.Broadcast(Snapshot);
+  }
+}
+
+void UAR_AbilityComponent::RemoveBuff(FName BuffID)
+{
+  if (BuffID.IsNone())
+  {
+    return;
+  }
+
+  if (ActiveBuffs.Remove(BuffID) > 0)
+  {
+    OnBuffRemoved.Broadcast(BuffID);
+  }
+}
+
+TArray<FAR_ActiveBuffInfo> UAR_AbilityComponent::GetActiveBuffs() const
+{
+  TArray<FAR_ActiveBuffInfo> Buffs;
+  Buffs.Reserve(ActiveBuffs.Num());
+
+  for (const TPair<FName, FAR_ActiveBuffInfo>& Pair : ActiveBuffs)
+  {
+    Buffs.Add(BuildBuffSnapshot(Pair.Value));
+  }
+
+  return Buffs;
+}
+
+bool UAR_AbilityComponent::GetActiveBuff(FName BuffID, FAR_ActiveBuffInfo& OutBuffInfo) const
+{
+  const FAR_ActiveBuffInfo* BuffInfo = ActiveBuffs.Find(BuffID);
+
+  if (!BuffInfo)
+  {
+    return false;
+  }
+
+  OutBuffInfo = BuildBuffSnapshot(*BuffInfo);
+  return true;
+}
+
+float UAR_AbilityComponent::GetBuffRemainingTime(FName BuffID) const
+{
+  FAR_ActiveBuffInfo BuffInfo;
+  return GetActiveBuff(BuffID, BuffInfo) ? BuffInfo.RemainingTime : 0.0f;
+}
+
+float UAR_AbilityComponent::GetBuffRemainingPercent(FName BuffID) const
+{
+  FAR_ActiveBuffInfo BuffInfo;
+  return GetActiveBuff(BuffID, BuffInfo) ? BuffInfo.RemainingPercent : 0.0f;
+}
+
+FAR_ActiveBuffInfo UAR_AbilityComponent::BuildBuffSnapshot(const FAR_ActiveBuffInfo& BuffInfo) const
+{
+  FAR_ActiveBuffInfo Snapshot = BuffInfo;
+
+  if (Snapshot.Duration <= 0.0f)
+  {
+    Snapshot.RemainingTime = 0.0f;
+    Snapshot.RemainingPercent = Snapshot.MaxStackCount > 0
+        ? FMath::Clamp(static_cast<float>(Snapshot.StackCount) / static_cast<float>(Snapshot.MaxStackCount), 0.0f, 1.0f)
+        : 1.0f;
+    return Snapshot;
+  }
+
+  const UWorld* World = GetWorld();
+  const float CurrentTime = World ? World->GetTimeSeconds() : Snapshot.StartTime;
+  const float ElapsedTime = FMath::Max(0.0f, CurrentTime - Snapshot.StartTime);
+
+  Snapshot.RemainingTime = FMath::Max(0.0f, Snapshot.Duration - ElapsedTime);
+  Snapshot.RemainingPercent = FMath::Clamp(Snapshot.RemainingTime / Snapshot.Duration, 0.0f, 1.0f);
+
+  return Snapshot;
 }
 
 void UAR_AbilityComponent::ActivateAbility1()

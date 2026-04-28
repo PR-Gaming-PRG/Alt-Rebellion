@@ -25,13 +25,20 @@ void UAR_DamageBuffAbility::Activate_Implementation(AAR_CharacterBase* OwnerChar
     return;
   }
 
-  PreviousDamageMultiplier = OwnerCharacter->DamageMultiplier;
-  OwnerCharacter->DamageMultiplier *= DamageMultiplierBonus * GetUpgradeDamageMultiplier();
+  const float TotalDamageMultiplier = DamageMultiplierBonus * GetUpgradeDamageMultiplier();
 
-  if (OwnerCharacter->GetCharacterMovement())
+  if (!bIsActive)
   {
-    PreviousMoveSpeed = OwnerCharacter->GetCharacterMovement()->MaxWalkSpeed;
-    OwnerCharacter->GetCharacterMovement()->MaxWalkSpeed *= SpeedMultiplierBonus;
+    PreviousDamageMultiplier = OwnerCharacter->DamageMultiplier;
+    OwnerCharacter->DamageMultiplier *= TotalDamageMultiplier;
+
+    if (OwnerCharacter->GetCharacterMovement())
+    {
+      PreviousMoveSpeed = OwnerCharacter->GetCharacterMovement()->MaxWalkSpeed;
+      OwnerCharacter->GetCharacterMovement()->MaxWalkSpeed *= SpeedMultiplierBonus;
+    }
+
+    bIsActive = true;
   }
 
   OwnerCharacter->GetWorld()->GetTimerManager().ClearTimer(DeactivateTimerHandle);
@@ -44,11 +51,24 @@ void UAR_DamageBuffAbility::Activate_Implementation(AAR_CharacterBase* OwnerChar
       false
   );
 
+  const int32 DamageBonusPercent = FMath::RoundToInt((TotalDamageMultiplier - 1.0f) * 100.0f);
+  const int32 SpeedBonusPercent = FMath::RoundToInt((SpeedMultiplierBonus - 1.0f) * 100.0f);
+
+  ShowBuffOnHUD(
+      AbilityID,
+      BuffDuration,
+      FText::Format(
+          FText::FromString(TEXT("+{0}% к урону, +{1}% к скорости.")),
+          FText::AsNumber(DamageBonusPercent),
+          FText::AsNumber(SpeedBonusPercent)
+      )
+  );
+
   UE_LOG(
       LogTemp,
       Warning,
       TEXT("Buff activated. Damage x%.2f, Speed x%.2f"),
-      DamageMultiplierBonus * GetUpgradeDamageMultiplier(),
+      TotalDamageMultiplier,
       SpeedMultiplierBonus
   );
 }
@@ -66,6 +86,9 @@ void UAR_DamageBuffAbility::Deactivate_Implementation()
   {
     CachedOwnerCharacter->GetCharacterMovement()->MaxWalkSpeed = PreviousMoveSpeed;
   }
+
+  bIsActive = false;
+  HideBuffFromHUD(AbilityID);
 
   UE_LOG(
       LogTemp,

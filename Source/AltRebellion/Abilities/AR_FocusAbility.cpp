@@ -9,6 +9,10 @@ UAR_FocusAbility::UAR_FocusAbility()
 {
     AbilityID = TEXT("Alisa_Focus");
     DisplayName = FText::FromString(TEXT("Фокус"));
+    BuffDisplayName = DisplayName;
+    BuffDescription = FText::FromString(TEXT("Увеличивает урон оружия."));
+    FocusBuffDisplayName = DisplayName;
+    FocusBuffDescription = BuffDescription;
     Cooldown = 0.0f;
 }
 
@@ -59,6 +63,8 @@ void UAR_FocusAbility::HandleWeaponHit(AActor* TargetActor, float Damage, bool b
         false
     );
 
+    ApplyFocusBuffToHUD();
+
     UE_LOG(LogTemp, Warning, TEXT("Focus triggered"));
 }
 
@@ -78,5 +84,35 @@ void UAR_FocusAbility::Deactivate_Implementation()
     HitStreak = 0;
     bIsActive = false;
 
+    if (CachedOwnerCharacter->AbilityComponent)
+    {
+        CachedOwnerCharacter->AbilityComponent->RemoveBuff(FocusBuffID);
+    }
+
     UE_LOG(LogTemp, Warning, TEXT("Focus ended"));
+}
+
+void UAR_FocusAbility::ApplyFocusBuffToHUD()
+{
+    if (!CachedOwnerCharacter || !CachedOwnerCharacter->AbilityComponent)
+    {
+        return;
+    }
+
+    const float TotalDamageMultiplier = DamageMultiplier * GetUpgradeDamageMultiplier();
+    const int32 DamageBonusPercent = FMath::RoundToInt((TotalDamageMultiplier - 1.0f) * 100.0f);
+
+    FAR_ActiveBuffInfo BuffInfo;
+    BuffInfo.BuffID = FocusBuffID;
+    BuffInfo.DisplayName = FocusBuffDisplayName.IsEmpty() ? DisplayName : FocusBuffDisplayName;
+    BuffInfo.Description = FocusBuffDescription.IsEmpty()
+        ? FText::Format(
+            FText::FromString(TEXT("+{0}% к урону оружия.")),
+            FText::AsNumber(DamageBonusPercent)
+        )
+        : FocusBuffDescription;
+    BuffInfo.Icon = BuffIcon ? BuffIcon : AbilityIcon;
+    BuffInfo.Duration = FocusDuration;
+
+    CachedOwnerCharacter->AbilityComponent->ApplyBuff(BuffInfo);
 }

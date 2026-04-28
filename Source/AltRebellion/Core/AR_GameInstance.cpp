@@ -14,6 +14,42 @@ bool UAR_GameInstance::HasSaveGame() const
     return UGameplayStatics::DoesSaveGameExist(SaveSlotName, SaveUserIndex);
 }
 
+void UAR_GameInstance::SetSettingValue(FName SettingID, float Value)
+{
+    if (SettingID.IsNone())
+    {
+        return;
+    }
+
+    Settings.FindOrAdd(SettingID) = Value;
+}
+
+float UAR_GameInstance::GetSettingValue(FName SettingID, float DefaultValue) const
+{
+    if (SettingID.IsNone())
+    {
+        return DefaultValue;
+    }
+
+    const float* Value = Settings.Find(SettingID);
+    return Value ? *Value : DefaultValue;
+}
+
+void UAR_GameInstance::SetSettingBool(FName SettingID, bool bValue)
+{
+    SetSettingValue(SettingID, bValue ? 1.0f : 0.0f);
+}
+
+bool UAR_GameInstance::GetSettingBool(FName SettingID, bool bDefaultValue) const
+{
+    return GetSettingValue(SettingID, bDefaultValue ? 1.0f : 0.0f) > 0.5f;
+}
+
+void UAR_GameInstance::SaveSettings()
+{
+    SaveGame();
+}
+
 bool UAR_GameInstance::SaveGame()
 {
     UAR_SaveGame* SaveObject = CreateSaveObjectFromCurrentState();

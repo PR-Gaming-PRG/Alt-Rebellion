@@ -49,6 +49,16 @@ void UAR_AdrenalineAbility::HandleTargetKilled(AActor* KilledActor)
         false
     );
 
+    const int32 SpeedBonusPercent = FMath::RoundToInt((SpeedMultiplier - 1.0f) * 100.0f);
+    ShowBuffOnHUD(
+        AbilityID,
+        SpeedDuration,
+        FText::Format(
+            FText::FromString(TEXT("+{0}% к скорости после убийства.")),
+            FText::AsNumber(SpeedBonusPercent)
+        )
+    );
+
     UE_LOG(LogTemp, Warning, TEXT("Adrenaline triggered"));
 }
 
@@ -61,6 +71,7 @@ void UAR_AdrenalineAbility::Deactivate_Implementation()
 
     CachedOwnerCharacter->GetCharacterMovement()->MaxWalkSpeed = PreviousMoveSpeed;
     bIsActive = false;
+    HideBuffFromHUD(AbilityID);
 
     UE_LOG(LogTemp, Warning, TEXT("Adrenaline ended"));
 }

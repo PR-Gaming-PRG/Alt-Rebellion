@@ -39,6 +39,18 @@ void UAR_OverheatAbility::Activate_Implementation(AAR_CharacterBase* OwnerCharac
         false
     );
 
+    const float TotalDamageMultiplier = DamageMultiplier * GetUpgradeDamageMultiplier();
+    const int32 DamageBonusPercent = FMath::RoundToInt((TotalDamageMultiplier - 1.0f) * 100.0f);
+
+    ShowBuffOnHUD(
+        AbilityID,
+        OverheatDuration,
+        FText::Format(
+            FText::FromString(TEXT("+{0}% к урону оружия.")),
+            FText::AsNumber(DamageBonusPercent)
+        )
+    );
+
     UE_LOG(LogTemp, Warning, TEXT("Overheat activated"));
 }
 
@@ -51,6 +63,7 @@ void UAR_OverheatAbility::Deactivate_Implementation()
 
     CachedOwnerCharacter->DamageMultiplier = PreviousDamageMultiplier;
     bIsActive = false;
+    HideBuffFromHUD(AbilityID);
 
     UE_LOG(LogTemp, Warning, TEXT("Overheat ended"));
 }

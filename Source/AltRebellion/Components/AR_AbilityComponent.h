@@ -18,6 +18,52 @@ Ability2 UMETA(DisplayName = "Ability 2"),
 Ultimate UMETA(DisplayName = "Ultimate")
 };
 
+USTRUCT(BlueprintType)
+struct FAR_ActiveBuffInfo
+{
+GENERATED_BODY()
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
+FName BuffID;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
+FText DisplayName;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
+FText Description;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
+TObjectPtr<UTexture2D> Icon;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
+float Duration = 0.0f;
+
+UPROPERTY(BlueprintReadOnly, Category = "Buff")
+float StartTime = 0.0f;
+
+UPROPERTY(BlueprintReadOnly, Category = "Buff")
+float RemainingTime = 0.0f;
+
+UPROPERTY(BlueprintReadOnly, Category = "Buff")
+float RemainingPercent = 0.0f;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
+int32 StackCount = 0;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
+int32 MaxStackCount = 0;
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FOnBuffInfoChanged,
+    const FAR_ActiveBuffInfo&, BuffInfo
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FOnBuffRemoved,
+    FName, BuffID
+);
+
 UCLASS(Abstract, BlueprintType, Blueprintable, EditInlineNew, DefaultToInstanced)
 class ALTREBELLION_API UAR_AbilityBase : public UObject
 {
@@ -32,6 +78,15 @@ FText DisplayName;
 
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|UI")
 TObjectPtr<UTexture2D> AbilityIcon;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Buff")
+FText BuffDisplayName;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Buff")
+FText BuffDescription;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Buff")
+TObjectPtr<UTexture2D> BuffIcon;
 
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
 float Cooldown = 5.0f;
@@ -118,6 +173,9 @@ float LastActivationTime = -999.0f;
 
 float BaseCooldownBeforeUpgrades = -1.0f;
 
+void ShowBuffOnHUD(FName BuffID, float BuffDuration, const FText& DescriptionOverride, int32 StackCount = 0, int32 MaxStackCount = 0);
+void HideBuffFromHUD(FName BuffID);
+
 void ApplyAreaDamage(
     AAR_CharacterBase* OwnerCharacter,
     const FVector& Center,
@@ -171,6 +229,15 @@ TObjectPtr<UAR_AbilityBase> Ability2;
 UPROPERTY(BlueprintReadOnly, Category = "Abilities")
 TObjectPtr<UAR_AbilityBase> Ultimate;
 
+UPROPERTY(BlueprintAssignable, Category = "Abilities|Buffs")
+FOnBuffInfoChanged OnBuffApplied;
+
+UPROPERTY(BlueprintAssignable, Category = "Abilities|Buffs")
+FOnBuffInfoChanged OnBuffUpdated;
+
+UPROPERTY(BlueprintAssignable, Category = "Abilities|Buffs")
+FOnBuffRemoved OnBuffRemoved;
+
 UFUNCTION(BlueprintCallable, Category = "Abilities")
 void ActivateAbility1();
 
@@ -222,6 +289,24 @@ void ResetAbilityCooldowns();
 UFUNCTION(BlueprintCallable, Category = "Abilities|Upgrades")
 void ReduceAbilityCooldowns(float Seconds);
 
+UFUNCTION(BlueprintCallable, Category = "Abilities|Buffs")
+void ApplyBuff(const FAR_ActiveBuffInfo& BuffInfo);
+
+UFUNCTION(BlueprintCallable, Category = "Abilities|Buffs")
+void RemoveBuff(FName BuffID);
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities|Buffs")
+TArray<FAR_ActiveBuffInfo> GetActiveBuffs() const;
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities|Buffs")
+bool GetActiveBuff(FName BuffID, FAR_ActiveBuffInfo& OutBuffInfo) const;
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities|Buffs")
+float GetBuffRemainingTime(FName BuffID) const;
+
+UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Abilities|Buffs")
+float GetBuffRemainingPercent(FName BuffID) const;
+
 private:
 UFUNCTION()
 void HandleAbilityUpgraded(FName AbilityID, int32 NewLevel);
@@ -229,4 +314,8 @@ void HandleAbilityUpgraded(FName AbilityID, int32 NewLevel);
 UAR_AbilityBase* CreateAbilityInstance(TSubclassOf<UAR_AbilityBase> AbilityClass);
 void ApplySavedUpgradeLevelToAbility(UAR_AbilityBase* Ability);
 const FAR_AbilityUpgradeRow* FindUpgradeRow(FName AbilityID, int32 TargetLevel) const;
+FAR_ActiveBuffInfo BuildBuffSnapshot(const FAR_ActiveBuffInfo& BuffInfo) const;
+
+UPROPERTY()
+TMap<FName, FAR_ActiveBuffInfo> ActiveBuffs;
 };

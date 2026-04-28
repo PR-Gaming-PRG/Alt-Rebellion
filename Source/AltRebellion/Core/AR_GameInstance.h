@@ -61,6 +61,21 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Game State")
     TMap<FName, float> Settings;
 
+    UFUNCTION(BlueprintCallable, Category = "Settings")
+    void SetSettingValue(FName SettingID, float Value);
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Settings")
+    float GetSettingValue(FName SettingID, float DefaultValue) const;
+
+    UFUNCTION(BlueprintCallable, Category = "Settings")
+    void SetSettingBool(FName SettingID, bool bValue);
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Settings")
+    bool GetSettingBool(FName SettingID, bool bDefaultValue) const;
+
+    UFUNCTION(BlueprintCallable, Category = "Settings")
+    void SaveSettings();
+
     // Сохранить текущее состояние игры
     UFUNCTION(BlueprintCallable, Category = "Save")
     bool SaveGame();

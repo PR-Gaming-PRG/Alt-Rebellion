@@ -16,4 +16,8 @@ UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Point Blank")
 float DamageMultiplier = 2.0f;
 
 virtual void Activate_Implementation(AAR_CharacterBase* OwnerCharacter) override;
+
+private:
+UFUNCTION()
+void HandleWeaponHit(AActor* TargetActor, float Damage, bool bKilled);
 };

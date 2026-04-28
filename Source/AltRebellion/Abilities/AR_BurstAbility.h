@@ -19,4 +19,10 @@ public:
     float DamageMultiplier = 1.5f;
 
     virtual void Activate_Implementation(AAR_CharacterBase* OwnerCharacter) override;
+
+private:
+    UFUNCTION()
+    void HandleWeaponHit(AActor* TargetActor, float Damage, bool bKilled);
+
+    int32 RemainingEmpoweredShots = 0;
 };

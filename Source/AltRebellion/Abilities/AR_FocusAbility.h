@@ -21,6 +21,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Focus")
     float DamageMultiplier = 1.25f;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Focus|Buff")
+    FName FocusBuffID = TEXT("Alisa_Focus_Buff");
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Focus|Buff")
+    FText FocusBuffDisplayName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Focus|Buff")
+    FText FocusBuffDescription;
+
     virtual void InitializeAbility_Implementation(AAR_CharacterBase* OwnerCharacter) override;
     virtual void Deactivate_Implementation() override;
 
@@ -35,4 +44,6 @@ private:
     float PreviousDamageMultiplier = 1.0f;
     bool bIsActive = false;
     FTimerHandle DeactivateTimerHandle;
+
+    void ApplyFocusBuffToHUD();
 };
